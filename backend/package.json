@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/Ashwani2529/Facebook-Lite/issues"
   },
-  "homepage": "https://github.com/Ashwani2529/Facebook-Lite#readme",
+  "homepage": "https://facebook-lite-uf4z.vercel.app",
   "dependencies": {
     "bcrypt": "^5.0.1",
     "bcryptjs": "^2.4.3",
