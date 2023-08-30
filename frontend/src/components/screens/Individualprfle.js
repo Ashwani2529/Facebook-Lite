@@ -20,7 +20,7 @@ const Individualprfle = () => {
 
   useEffect(()=>{
 
-    fetch(`/user/${userid}`,{
+    fetch(`https://fb-lite.onrender.com/user/${userid}`,{
       headers:{
         'Authorization':'Bearer '+localStorage.getItem('jwt')
       }
@@ -32,7 +32,7 @@ const Individualprfle = () => {
 
 
   const followUser = () =>{
-    fetch('/follow',{
+    fetch('https://fb-lite.onrender.com/follow',{
       method:"put",
       headers:{
         "content-Type":"application/json",
@@ -66,7 +66,7 @@ const Individualprfle = () => {
 
 
   const unfollowUser = () =>{
-    fetch('/unfollow',{
+    fetch('https://fb-lite.onrender.com/unfollow',{
       method:"put",
       headers:{
         "content-Type":"application/json",

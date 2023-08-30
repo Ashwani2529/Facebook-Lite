@@ -41,7 +41,7 @@ const Signup = () => {
 
       // console.log(data.url)
     // sending data to the database
-    fetch('/signup',{
+    fetch('https://fb-lite.onrender.com/signup',{
       method:"post",
       headers:{
         'Content-Type':"application/json"

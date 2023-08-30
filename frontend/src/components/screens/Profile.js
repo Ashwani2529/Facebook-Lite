@@ -27,7 +27,7 @@ const Profile = () => {
 
   useEffect(()=>{
 
-    fetch('/mypost',{
+    fetch('https://fb-lite.onrender.com/mypost',{
       headers:{
         'Authorization':'Bearer '+localStorage.getItem('jwt')
       }
@@ -83,7 +83,7 @@ const Profile = () => {
       localStorage.setItem("user",JSON.stringify({...state,pic:data.url}))
       dispatch({type:"UPDATEPIC",payload:data.url})
 
-      fetch('/updatepic',{
+      fetch('https://fb-lite.onrender.com/updatepic',{
         method:"put",
         headers:{
           "Content-Type":"application/json",

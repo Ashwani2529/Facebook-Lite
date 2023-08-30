@@ -41,7 +41,7 @@ const Createpost = () => {
     }).then(res => res.json()).then((data) => {
       console.log(data.url)
 // sending data to the database
-      fetch('/createpost', {
+      fetch('https://fb-lite.onrender.com/createpost', {
         method: "post",
         headers: {
           "Authorization": "Bearer " + localStorage.getItem("jwt"),
