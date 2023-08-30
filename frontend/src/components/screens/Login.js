@@ -22,7 +22,7 @@ const Login = () => {
     
     if (validator.isEmail(email)) {
       setDisable(!disbale);
-      fetch("https://fb-lite.onrender.com/signin", {
+      fetch("/signin", {
         method: "post",
         headers: {
           "Content-Type": "application/json"

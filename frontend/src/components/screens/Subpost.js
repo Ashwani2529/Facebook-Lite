@@ -15,7 +15,7 @@ const Home = (props) => {
 
     useEffect(()=>{
 
-      fetch('https://fb-lite.onrender.com/getsubpost',{
+      fetch('/getsubpost',{
         method:"get",
         headers:{
           "Authorization":"Bearer "+localStorage.getItem("jwt"),

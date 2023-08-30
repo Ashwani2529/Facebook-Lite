@@ -22,7 +22,7 @@ const Home = (props) => {
 
     useEffect(()=>{
 
-      fetch('https://fb-lite.onrender.com/allpost',{
+      fetch('/allpost',{
         method:"get",
         headers:{
           "Authorization":"Bearer "+localStorage.getItem("jwt"),
@@ -55,7 +55,7 @@ const Home = (props) => {
 const searched = (query) =>{
   setUser(query)
 
-  fetch('https://fb-lite.onrender.com/search-users',{
+  fetch('/search-users',{
     method:'post',
     headers:{
       "Content-Type":"application/json"

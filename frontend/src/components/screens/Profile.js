@@ -27,7 +27,7 @@ const Profile = () => {
 
   useEffect(()=>{
 
-    fetch('https://fb-lite.onrender.com/mypost',{
+    fetch('/mypost',{
       headers:{
         'Authorization':'Bearer '+localStorage.getItem('jwt')
       }
