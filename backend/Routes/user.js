@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { restart } = require('nodemon');
 const Post = mongoose.model('Post')
 const login = require('../middleware/login')
 const User = mongoose.model("User") 

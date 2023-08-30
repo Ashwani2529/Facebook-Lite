@@ -8,8 +8,6 @@ const login = require('../middleware/login')
 router.post('/createpost',login,(req,res)=>{
 
     const {photo, body} = req.body;
-    // console.log(photo)
-    // console.log(body)
     if(!photo || !body )
     {
        return res.status(422).json({"error":"please add all the fields"});

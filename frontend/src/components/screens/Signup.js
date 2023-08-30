@@ -39,7 +39,7 @@ const Signup = () => {
       body: data
     }).then(res => res.json()).then((data) => {
 
-      console.log(data.url)
+      // console.log(data.url)
     // sending data to the database
     fetch('/signup',{
       method:"post",
