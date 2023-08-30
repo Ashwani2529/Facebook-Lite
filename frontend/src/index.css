@@ -1,0 +1,174 @@
+body {
+  background-color: #161925;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+}
+
+.box {
+  margin-top: 20px;
+  border-radius: 10px;
+  background-color: #23395b;
+}
+
+.row {
+  width: 75%;
+  display: flex;
+  margin: auto;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.andchor {
+  justify-content: center;
+  display: flex;
+  margin: auto;
+  margin-top: 10px;
+  font-family: "Roboto", sans-serif;
+  font-weight: bold;
+}
+
+button {
+  height: 50px;
+  font-family: "Roboto", sans-serif;
+}
+
+.textArea {
+  margin: auto;
+  background-color: transparent;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 50px;
+}
+
+a {
+  text-decoration: none;
+}
+
+.home {
+  font-weight: bold;
+  font-size: 40px;
+}
+
+.anchor {
+  font-weight: bold;
+  font-size: 40px;
+}
+
+.acc {
+  text-align: center;
+  font-weight: bold;
+  font-size: 30px;
+}
+
+.newAccBox {
+  border-radius: 10px;
+}
+
+#filled-basic {
+  width: 300px;
+}
+
+.navdiv {
+  float: right;
+  display: flex;
+  margin-top: 15px;
+}
+
+.navvbar {
+  background-color: transparent;
+}
+
+.textAreaa {
+  width: max-content;
+  height: fit-content;
+  background-color: rgb(218, 221, 228);
+  border: none;
+  border-radius: 20px;
+  outline: none;
+}
+
+.post {
+  border-radius: 15px;
+  margin: 10px;
+}
+
+.sidebar {
+  height: 250px;
+}
+
+.image {
+  display: flex;
+  justify-content: center;
+}
+
+img {
+  border-radius: 10px;
+}
+
+.picture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-box {
+  position: fixed;
+  width: 100%;
+  height: 50vh;
+  top: 0;
+  left: 0;
+}
+
+.boxx {
+  position: relative;
+  width: 25%;
+  margin: 0 auto;
+  height: 60vh;
+  margin-top: calc(100vh - 85vh - 20px);
+  background-color: #23395b;
+  border-radius: 4px;
+  padding: 20px;
+  border: 1px solid #999;
+  overflow: auto;
+  border: none;
+  border-radius: 20px;
+}
+
+.close-icon {
+  content: "x";
+  cursor: pointer;
+  position: fixed;
+  right: calc(38% - 10px);
+  top: calc(100vh - 85vh - 20px);
+  background: #161925;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  line-height: 20px;
+  text-align: center;
+  border: 1px solid #999;
+  font-size: 20px;
+}
+
+.popupitems {
+  display: grid;
+  justify-content: center;
+  align-items: center;
+}
+
+.comment {
+  margin-left: 10px;
+}
+
+.paragraph {
+  font-family: "Roboto", sans-serif;
+  font-size: 20px;
+}
+
+.itemsInSearch:hover {
+  background: #23395b;
+  border-radius: 10px;
+}

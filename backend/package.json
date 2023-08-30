@@ -1,0 +1,40 @@
+{
+  "name": "facebook-lite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    "client": "npm start --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ashwani2529/Facebook-Lite.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ashwani2529/Facebook-Lite//issues"
+  },
+  "homepage": "https://github.com/Ashwani2529/Facebook-Lite#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "bcryptjs": "^2.4.3",
+    "bootstrap": "^5.0.0",
+    "dotenv": "^9.0.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "materialize-css": "^1.0.0-rc.2",
+    "mongo": "^0.1.0",
+    "mongoose": "^5.12.7",
+    "react-search-field": "^1.2.1",
+    "validator": "^13.6.0"
+  },
+  "devDependencies": {
+    "concurrently": "^6.0.2",
+    "nodemon": "^2.0.7"
+  }
+}
