@@ -105,14 +105,7 @@ const Card = (props) => {
       console.log(props.id);
     }
 
-
   }
-
-
-
-
-
-
   return (
     <>
       <div className=' container-fluid posts'>
@@ -128,8 +121,8 @@ const Card = (props) => {
             <div className='image p-2'>
               <img className='w-50' src={props.photo} alt='thisImage' />
             </div>
-            <h6 style={{color:'white',fontSize:'15px', marginTop:'10px'}}>{props.likes.length} People Liked</h6>
-            <h6 style={{color:'white',fontSize:'15px'}}>{props.comments.length} People Commented</h6>
+            <h6 style={{color:'white',fontSize:'15px', marginTop:'10px'}}>{props.likes.length} Likes</h6>
+            <h6 style={{color:'white',fontSize:'15px'}}>{props.comments.length} Comment</h6>
 
             <div className='p-2 d-flex justify-content-center'>
               {props.isLiked ? (<button className='m-2 btn btn-outline-warning' onClick={() => { toggleClick(props.id) }}><ThumbUpIcon /></button>) : (<button className='m-2 btn btn-outline-light' onClick={() => { toggleClick(props.id) }}><ThumbUpAltOutlinedIcon /></button>)}

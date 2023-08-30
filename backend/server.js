@@ -1,11 +1,15 @@
 const express = require('express');
-const cors = require('cors');
+// const cors = require('cors');
 const app = express();
 const mongoose = require('mongoose');
 
 // Allow requests from your frontend's domain
-const frontendDomain = 'https://facebook-lite.vercel.app';
-app.use(cors({ origin: frontendDomain }));
+app.use(cors({
+    origin:'https://facebook-lite.vercel.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['*']
+  }))
+
 
 // Connecting with Atlas MongoDB
 mongoose.connect("mongodb+srv://ashwanix2749:2749@cluster0.3x8suve.mongodb.net/", {
@@ -14,7 +18,7 @@ mongoose.connect("mongodb+srv://ashwanix2749:2749@cluster0.3x8suve.mongodb.net/"
     useUnifiedTopology: true,
     useFindAndModify: false
 }).then(() => {
-    console.log('Connection to MongoDB Atlas successful');
+    console.log('Connected to MongoDB');
 }).catch(error => {
     console.log('Error connecting to MongoDB Atlas:', error);
 });
@@ -36,7 +40,7 @@ app.use(require('./Routes/post'));
 app.use(require('./Routes/user'));
 
 // Listening to port
-const port = process.env.PORT || 5000; // Use environment variable if provided, otherwise use 5000
+const port = 5000; // Use environment variable if provided, otherwise use 5000
 app.listen(port, () => {
     console.log('Server is running on port: ' + port);
 });

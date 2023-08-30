@@ -10,12 +10,7 @@ import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {Button} from "react-bootstrap";
 
 toast.configure();
-
-
-
-
 const Createpost = () => {
-
   const [body, setBody] = useState('');
   const history = useHistory();
   const [img, setImg] = useState({
@@ -26,10 +21,7 @@ const Createpost = () => {
     uploadImage: false
   })
   const [disbale,setDisable] = useState(false);
-
-
   const postDetails = (x) => {
-    
     const data = new FormData()
     data.append("file", x)
     data.append("upload_preset", "Cloudy")
