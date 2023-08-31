@@ -2,6 +2,9 @@
 
 This repository contains the implementation of a social media application called "Facebook Lite" as part of the MERN Stack Development Task 2 for the internship. The project includes a set of RESTful APIs and a corresponding front-end, focusing on user registration, login, password recovery, CRUD operations for posts, and interactions such as liking and commenting on posts.
 
+## WebApp Link 
+[Facebook Lite](https://facebook-lite.vercel.app)
+
 ## Project Overview
 
 The main goal of this project was to create a social media application that allows users to perform various actions, including user registration, login, password recovery, creating, reading, updating, and deleting posts, as well as liking and commenting on posts. The project was developed using the MERN (MongoDB, Express.js, React, Node.js) stack.
