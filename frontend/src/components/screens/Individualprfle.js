@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import Homenav from  './Homenav';
 import {Link, useParams} from 'react-router-dom'
 import {UserContext} from '../../App';
-
+import SERVER_URL from '../../server_url';
 
 const Individualprfle = () => {
 
@@ -20,7 +20,7 @@ const Individualprfle = () => {
 
   useEffect(()=>{
 
-    fetch(`/user/${userid}`,{
+    fetch(`${SERVER_URL}/user/${userid}`,{
       headers:{
         'Authorization':'Bearer '+localStorage.getItem('jwt')
       }
@@ -32,7 +32,7 @@ const Individualprfle = () => {
 
 
   const followUser = () =>{
-    fetch('/follow',{
+    fetch(`${SERVER_URL}/follow`,{
       method:"put",
       headers:{
         "content-Type":"application/json",
@@ -66,7 +66,7 @@ const Individualprfle = () => {
 
 
   const unfollowUser = () =>{
-    fetch('/unfollow',{
+    fetch(`${SERVER_URL}/unfollow`,{
       method:"put",
       headers:{
         "content-Type":"application/json",

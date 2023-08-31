@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import IconButton from '@material-ui/core/IconButton';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {Button} from "react-bootstrap";
+import SERVER_URL from '../../server_url';
 
 toast.configure();
 const Createpost = () => {
@@ -33,7 +34,7 @@ const Createpost = () => {
     }).then(res => res.json()).then((data) => {
       console.log(data.url)
 // sending data to the database
-      fetch('/createpost', {
+      fetch(`${SERVER_URL}/createpost`, {
         method: "post",
         headers: {
           "Authorization": "Bearer " + localStorage.getItem("jwt"),

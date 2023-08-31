@@ -6,6 +6,7 @@ import {UserContext} from '../../App';
 import {toast} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {InputGroup,FormControl} from "react-bootstrap";
+import SERVER_URL from '../../server_url';
 
 toast.configure();
 const Login = () => {
@@ -22,7 +23,7 @@ const Login = () => {
     
     if (validator.isEmail(email)) {
       setDisable(!disbale);
-      fetch("/signin", {
+      fetch(`${SERVER_URL}/signin`, {
         method: "post",
         headers: {
           "Content-Type": "application/json"

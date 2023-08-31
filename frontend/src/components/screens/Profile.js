@@ -10,7 +10,7 @@ import imageCompression from "browser-image-compression";
 import {toast} from 'react-toastify';
 import {UserContext} from '../../App';
 import {InputGroup,FormControl} from "react-bootstrap";
-
+import SERVER_URL from '../../server_url';
 const Profile = () => {
   
   const [isOpen,setIsOpen] = useState(false);
@@ -27,7 +27,7 @@ const Profile = () => {
 
   useEffect(()=>{
 
-    fetch('/mypost',{
+    fetch(`${SERVER_URL}/mypost`,{
       headers:{
         'Authorization':'Bearer '+localStorage.getItem('jwt')
       }
@@ -83,7 +83,7 @@ const Profile = () => {
       localStorage.setItem("user",JSON.stringify({...state,pic:data.url}))
       dispatch({type:"UPDATEPIC",payload:data.url})
 
-      fetch('https://fb-lite.onrender.com/updatepic',{
+      fetch(`${SERVER_URL}/updatepic`,{
         method:"put",
         headers:{
           "Content-Type":"application/json",

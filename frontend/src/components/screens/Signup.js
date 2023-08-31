@@ -11,7 +11,7 @@ import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import Img from '../images/dp.png';
 import imageCompression from "browser-image-compression";
 import {InputGroup,FormControl} from "react-bootstrap";
-
+import SERVER_URL from '../../server_url';
 
 toast.configure();
 const Signup = () => {
@@ -33,7 +33,7 @@ const Signup = () => {
     data.append("file", img.compressedBlob)
     data.append("upload_preset", "Cloudy")
     data.append("cloud_name", "dtrsgpw04")
-
+      
     fetch("https://api.cloudinary.com/v1_1/dtrsgpw04/image/upload", {
       method: "post",
       body: data
@@ -41,7 +41,7 @@ const Signup = () => {
 
       // console.log(data.url)
     // sending data to the database
-    fetch('/signup',{
+    fetch(`${SERVER_URL}/signup`,{
       method:"post",
       headers:{
         'Content-Type':"application/json"

@@ -6,7 +6,7 @@ import CommentOutlinedIcon from '@material-ui/icons/CommentOutlined';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { UserContext } from '../../App';
 import DeleteRoundedIcon from '@material-ui/icons/DeleteRounded';
-
+import SERVER_URL from '../../server_url';
 
 
 
@@ -20,7 +20,7 @@ const Card = (props) => {
 
   const deletePost = (postid) => {
     console.log("delete is called")
-    fetch(`/deletepost/${postid}`, {
+    fetch(`${SERVER_URL}/deletepost/${postid}`, {
       method: "delete",
       headers: {
         "Authorization": "Bearer " + localStorage.getItem("jwt")
@@ -37,7 +37,7 @@ const Card = (props) => {
 
     console.log('comment added')
     setCommText('')
-    fetch('/comment', {
+    fetch(`${SERVER_URL}/comment`, {
       method: "put",
       headers: {
         "Content-Type": "application/json",
@@ -60,7 +60,7 @@ const Card = (props) => {
 
 
   const likePost = (id) => {
-    fetch('/like', {
+    fetch(`${SERVER_URL}/like`, {
       method: 'put',
       headers: {
         "Content-Type": "application/json",
@@ -77,7 +77,7 @@ const Card = (props) => {
 
   const unlikePost = (id) => {
 
-    fetch('/unlike', {
+    fetch(`${SERVER_URL}/unlike`, {
       method: 'put',
       headers: {
         "Content-Type": "application/json",

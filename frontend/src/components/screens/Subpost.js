@@ -4,7 +4,7 @@ import React, { useState, useEffect} from 'react'
 import { useHistory } from 'react-router-dom';
 import Homenav from './Homenav';
 import {UserContext} from '../../App';
-
+import SERVER_URL from '../../server_url';
 
 const Home = (props) => {
   const history = useHistory();
@@ -15,7 +15,7 @@ const Home = (props) => {
 
     useEffect(()=>{
 
-      fetch('/getsubpost',{
+      fetch(`${SERVER_URL}/getsubpost`,{
         method:"get",
         headers:{
           "Authorization":"Bearer "+localStorage.getItem("jwt"),
