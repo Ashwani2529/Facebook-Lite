@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 // Allow requests from your frontend's domain
 app.use(cors({
-    origin:'https://facebook-lite.vercel.app',
+    origin:['https://facebook-lite.vercel.app','https://chatter-box-collective-f6ywhjg5g-ashwani2529.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['*']
   }))
