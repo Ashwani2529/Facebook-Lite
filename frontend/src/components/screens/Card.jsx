@@ -1,11 +1,11 @@
 import { Link} from 'react-router-dom';
 import React, { useState, useContext } from 'react';
-import ThumbUpIcon from '@material-ui/icons/ThumbUp';
-import ThumbUpAltOutlinedIcon from '@material-ui/icons/ThumbUpAltOutlined';
-import CommentOutlinedIcon from '@material-ui/icons/CommentOutlined';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
+import CommentOutlinedIcon from '@mui/icons-material/CommentOutlined';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { UserContext } from '../../App';
-import DeleteRoundedIcon from '@material-ui/icons/DeleteRounded';
+import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import SERVER_URL from '../../server_url';
 
 

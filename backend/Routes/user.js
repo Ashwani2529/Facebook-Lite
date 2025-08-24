@@ -1,103 +1,203 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const Post = mongoose.model('Post')
-const login = require('../middleware/login')
-const User = mongoose.model("User") 
+const Post = mongoose.model('Post');
+const login = require('../middleware/login');
+const User = mongoose.model("User");
+const Notification = require('../models/notification'); 
 
+// Get user profile with posts
+router.get('/user/:id', login, async (req, res) => {
+    try {
+        const user = await User.findOne({ _id: req.params.id }).select("-password");
+        
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        const posts = await Post.find({ postedBy: req.params.id })
+            .populate("postedBy", "_id name email pic")
+            .populate('comments.postedBy', '_id name email pic')
+            .sort("-createdAt");
+            
+        res.json({ user, posts });
+    } catch (err) {
+        console.log('User profile error:', err);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+})
 
-router.get('/user/:id',login,(req,res)=>{
-    User.findOne({_id:req.params.id})
-    .select("-password")
-    .then(user=>{
-        Post.find({postedBy:req.params.id}).populate("postedBy","_id name")
-        .exec((err,posts)=>{
-            if(err){
-                return res.status(422).json({error:err})
+// Follow user with better error handling
+router.put('/follow', login, async (req, res) => {
+    try {
+        const { followid } = req.body;
+        console.log('Follow request:', { followid, userId: req.user._id });
+        
+        if (!followid) {
+            return res.status(422).json({ error: "User ID is required" });
+        }
+        
+        if (followid === req.user._id.toString()) {
+            return res.status(422).json({ error: "You cannot follow yourself" });
+        }
+
+        // Add current user to target user's followers
+        const targetUser = await User.findByIdAndUpdate(followid, {
+            $push: { followers: req.user._id }
+        }, { new: true });
+
+        if (!targetUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        // Add target user to current user's following
+        const updatedUser = await User.findByIdAndUpdate(req.user._id, {
+            $push: { following: followid }
+        }, { new: true }).select("-password");
+
+        // Create notification for the followed user (non-blocking)
+        try {
+            await Notification.createNotification({
+                recipient: followid,
+                sender: req.user._id,
+                type: 'follow',
+                message: `${req.user.name} started following you`
+            });
+            console.log('Follow notification created successfully');
+        } catch (notifError) {
+            console.log('Notification creation failed (non-critical):', notifError);
+            // Don't fail the follow action if notification fails
+        }
+
+        console.log('Follow successful');
+        res.json({ success: true, user: updatedUser });
+    } catch (err) {
+        console.error('Follow error details:', {
+            error: err.message,
+            stack: err.stack,
+            followid: req.body.followid,
+            userId: req.user._id
+        });
+        return res.status(500).json({ 
+            error: "Failed to follow user", 
+            details: err.message 
+        });
+    }
+})
+
+// Unfollow user with better error handling  
+router.put('/unfollow', login, async (req, res) => {
+        const { unfollowid } = req.body;
+    
+    if (!unfollowid) {
+        return res.status(422).json({ error: "User ID is required" });
+    }
+    
+    if (unfollowid === req.user._id.toString()) {
+        return res.status(422).json({ error: "You cannot unfollow yourself" });
+    }
+
+    try {
+        console.log('Unfollow request:', { unfollowid, userId: req.user._id });
+
+        // Remove current user from target user's followers
+        const targetUser = await User.findByIdAndUpdate(unfollowid, {
+            $pull: { followers: req.user._id }
+        }, { new: true });
+
+        if (!targetUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        
+        // Remove target user from current user's following
+        const updatedUser = await User.findByIdAndUpdate(req.user._id, {
+            $pull: { following: unfollowid }
+        }, { new: true }).select("-password");
+
+        console.log('Unfollow successful');
+        res.json({ success: true, user: updatedUser });
+    } catch (err) {
+        console.log('Unfollow error:', err);
+        return res.status(500).json({ error: "Failed to unfollow user" });
+    }
+}
+)
+
+// Update profile picture
+router.put('/updatepic', login, (req, res) => {
+    const { pic } = req.body;
+    
+    if (!pic) {
+        return res.status(422).json({ error: "Profile picture URL is required" });
+    }
+
+    User.findByIdAndUpdate(req.user._id, { $set: { pic: pic } }, { new: true })
+        .select("-password")
+        .then(result => {
+            if (!result) {
+                return res.status(404).json({ error: "User not found" });
             }
-            res.json({user,posts})
+            res.json({ message: "Profile picture updated successfully", user: result })
         })
-    }).catch(err=>{
-        return res.status(404).json({error:"User not found"})
-    })
-})
-
-
-router.put('/follow',login,(req,res)=>{
-    User.findByIdAndUpdate(req.body.followid,{
-        $push:{followers:req.user._id}
-    },{
-        new:true
-    },(err,result)=>{
-        if(err){
-            return res.status(422).json({error:err})
-        }
-        User.findByIdAndUpdate(req.user._id,{
-            $push:{following:req.body.followid}
-        },{new:true}).select("-password").then(result=>{
-            res.json(result)
-        }).catch(err=>{
-            return res.status(422).json({error:err})
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({ error: "Failed to update profile picture" })
         })
-    })
 })
 
-
-
-
-router.put('/unfollow',login,(req,res)=>{
-    User.findByIdAndUpdate(req.body.unfollowid,{
-        $pull:{followers:req.user._id}
-    },{
-        new:true
-    },(err,result)=>{
-        if(err){
-            return res.status(422).json({error:err})
-        }
-        User.findByIdAndUpdate(req.user._id,{
-            $pull:{following:req.body.unfollowid}
-        },{new:true}).select("-password").then(result=>{
-            res.json(result)
-        }).catch(err=>{
-            return res.status(422).json({error:err})
+// Search users with enhanced data for modern UI
+router.post('/search-users', (req, res) => {
+    const { query } = req.body;
+    
+    if (!query || !query.trim()) {
+        return res.status(422).json({ error: "Search query is required" });
+    }
+    
+    let userPattern = new RegExp(query.trim(), "i"); // Search anywhere in the name, case insensitive
+    User.find({ name: { $regex: userPattern } })
+        .select("_id name email pic") // Include email and pic for modern UI
+        .limit(10) // Limit results for performance
+        .then(user => {
+            res.json({ user })
         })
-    })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({ error: "Failed to search users" })
+        })
 })
 
-
-
-router.put('/updatepic',login,(req,res)=>{
-    User.findByIdAndUpdate(req.user._id,{$set:{pic:req.body.pic}},{new:true},
-    (err,result)=>{
-
-        if(err)
-        {
-            res.status(422).json({error:"pic cannot post"})
-        }
-        res.json(result)
-    })
-
+// Get user's followers
+router.get('/followers/:userId', login, (req, res) => {
+    User.findById(req.params.userId)
+        .populate('followers', '_id name email pic')
+        .select('followers')
+        .then(result => {
+            if (!result) {
+                return res.status(404).json({ error: "User not found" });
+            }
+            res.json({ followers: result.followers })
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({ error: "Failed to fetch followers" })
+        })
 })
 
-
-
-
-
-
-
-
-router.post('/search-users',(req,res)=>{
-    let userPattern = new RegExp("^"+req.body.query)
-    User.find({name:{$regex:userPattern}})
-    .select("_id name")
-    .then(user=>{
-        res.json({user})
-    }).catch(err=>{
-        console.log(err)
-    })
-
+// Get user's following
+router.get('/following/:userId', login, (req, res) => {
+    User.findById(req.params.userId)
+        .populate('following', '_id name email pic')
+        .select('following')
+        .then(result => {
+            if (!result) {
+                return res.status(404).json({ error: "User not found" });
+            }
+            res.json({ following: result.following })
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({ error: "Failed to fetch following" })
+        })
 })
 
-
-
-module.exports =  router
+module.exports = router

@@ -1,63 +1,240 @@
-# Facebook Lite - MERN Stack Development Project
+# Facebook Lite 🚀
 
-This repository contains the implementation of a social media application called "Facebook Lite" as part of the MERN Stack Development Task 2 for the internship. The project includes a set of RESTful APIs and a corresponding front-end, focusing on user registration, login, password recovery, CRUD operations for posts, and interactions such as liking and commenting on posts.
+A modern, full-stack social media platform built with the MERN stack, featuring real-time notifications, chat system, and beautiful dark/light theme support.
 
-## WebApp Link 
-[Facebook Lite](https://facebook-lite.vercel.app)
+## ✨ Features
 
-## Project Overview
+- 👤 **User Authentication** - Secure JWT-based auth with profile management
+- 📱 **Posts & Media** - Create, like, comment on posts with image uploads
+- 💬 **Real-time Chat** - One-to-one messaging with Socket.IO
+- 🔔 **Live Notifications** - Real-time notifications for likes, comments, follows
+- 🌓 **Dark/Light Theme** - Beautiful UI with theme persistence
+- 👥 **Social Features** - Follow users, discover posts, user profiles
+- 📱 **Responsive Design** - Works perfectly on all devices
+- 🔒 **Security** - Rate limiting, input validation, secure headers
 
-The main goal of this project was to create a social media application that allows users to perform various actions, including user registration, login, password recovery, creating, reading, updating, and deleting posts, as well as liking and commenting on posts. The project was developed using the MERN (MongoDB, Express.js, React, Node.js) stack.
+## 🛠️ Tech Stack
 
-## Project Structure
+**Frontend:**
+- React.js with Context API
+- Tailwind CSS + Bootstrap
+- Framer Motion animations
+- React Hot Toast notifications
+- React Router DOM
 
-The project is structured as follows:
+**Backend:**
+- Node.js + Express.js
+- MongoDB with Mongoose
+- JWT Authentication
+- Socket.IO for real-time features
+- Cloudinary for image uploads
+- Security middleware (Helmet, CORS, Rate limiting)
 
-- `backend/`: Contains the back-end code for the RESTful APIs using Node.js and Express.js.
-  - `routes/`: Includes the route definitions for different API endpoints.
-  - `models/`: Contains the MongoDB schema models for users and posts.
-  - `middleware/`: Contains middleware functions such as authentication.
-- `frontend/`: Contains the front-end code built using React.
-  - `src/`: Includes the React components and pages.
-    - `components/`: Reusable components used in different parts of the application.
-    - `components/screens/`: Individual pages for user registration, login, post display, etc.
-    - `App.js`: Main entry point for the React app.
+## ⚡ Quick Start
 
-## Implemented Features
+### 🔧 Environment Setup
 
-### User Registration and Login
+**Important: Both frontend and backend require environment variables to be configured.**
 
-- Users can register using their email, username, and password.
-- Users can log in using their username and password.
+#### Backend Setup:
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with your actual credentials
+npm install
+npm start
+```
 
-### Password Recovery
+#### Frontend Setup:
+```bash
+cd frontend  
+cp .env.example .env
+# Edit .env with your actual credentials
+npm install
+npm start
+```
 
-- Users can reset their password in case they forget it.
+### 📋 Required Environment Variables
 
-### CRUD Operations for Posts
+#### Backend (.env):
+```env
+# Database
+MONGODB_URI=your-mongodb-connection-string
+JWT_SECRET=your-super-secret-jwt-key-min-32-characters
 
-- Users can create, read, update, and delete their social media posts.
+# Cloudinary (for image uploads)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 
-### Likes & Comment Functionality
+# Server
+PORT=5000
+CLIENT_URL=http://localhost:3000
+```
 
-- Users can like posts.
-- Users can add comments to posts.
+#### Frontend (.env):
+```env
+# API Configuration
+REACT_APP_SERVER_URL=http://localhost:5000
 
-## Front-end Implementation
+# Cloudinary
+REACT_APP_CLOUDINARY_CLOUD_NAME=your-cloud-name
+REACT_APP_CLOUDINARY_UPLOAD_PRESET=your-upload-preset
+```
 
-The front-end was developed using React.js to provide a seamless user experience. The user registration and login pages were designed for ease of use and security. The social media posts page displays posts and allows users to interact with them using intuitive controls. The likes and comments feature enhances user engagement and interaction.
+### 🚀 Development
 
-## Instructions
+1. **Start Backend:**
+   ```bash
+   cd backend
+   npm run dev
+   ```
 
-1. Clone this repository to your local machine.
-2. Set up the backend by navigating to the `backend/` directory and running `npm install` to install the required dependencies.
-3. Start the backend server using `npm start`.
-4. Navigate to the `frontend/` directory and run `npm install` to install the front-end dependencies.
-5. Start the React app using `npm start`.
-6. Access the application in your web browser at `http://localhost:3000`.
+2. **Start Frontend:**
+   ```bash
+   cd frontend
+   npm start
+   ```
 
-## Conclusion
+3. **Access Application:**
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:5000
+   - API: http://localhost:5000/api/v1
 
-In conclusion, this project demonstrates a functional social media application built using the MERN stack. It successfully implements user registration, login, password recovery, CRUD operations for posts, and liking and commenting functionalities. The project reflects the skills and knowledge acquired during the internship and showcases the ability to develop a modern web application from both the front-end and back-end perspectives.
+## 📱 Features Overview
 
-For any questions or inquiries, please feel free to contact me at [ashwanix2749@gmail.com](mailto:ashwanix2749@gmail.com).
+### Authentication System
+- Secure signup with email, phone, date of birth validation
+- JWT-based authentication with refresh tokens
+- Profile management with image uploads
+
+### Social Features  
+- Create posts with images
+- Like and comment system
+- Follow/unfollow users
+- User discovery and search
+- Real-time notifications
+
+### Chat System
+- Send chat requests to users
+- Real-time one-to-one messaging
+- WhatsApp-like interface
+- Message read receipts
+- Online status indicators
+
+### UI/UX
+- Dark/Light theme toggle with persistence
+- Responsive design for all devices
+- Beautiful animations and transitions
+- Toast notifications for user feedback
+- Infinite scroll with pagination
+
+## 🔒 Security Features
+
+- Input validation and sanitization
+- Rate limiting on API endpoints
+- CORS configuration
+- Secure HTTP headers with Helmet
+- JWT token expiration and rotation
+- Password hashing with bcrypt
+- File upload security
+
+## 🌟 Developer Experience
+
+- Hot reload in development
+- Comprehensive error handling
+- Logging system with different levels  
+- Clean code architecture
+- Environment-based configuration
+- Git hooks for code quality
+
+## 📄 API Documentation
+
+### Authentication Endpoints
+```
+POST /api/v1/auth/signup - Create new account
+POST /api/v1/auth/signin - Login user
+GET  /api/v1/auth/me     - Get current user
+PUT  /api/v1/auth/me     - Update user profile
+```
+
+### Posts Endpoints
+```
+GET  /api/v1/posts/allpost    - Get all posts (paginated)
+POST /api/v1/posts/createpost - Create new post
+PUT  /api/v1/posts/like       - Like/unlike post
+PUT  /api/v1/posts/comment    - Add comment
+```
+
+### Users Endpoints
+```
+GET  /api/v1/users/user/:id     - Get user profile
+PUT  /api/v1/users/follow       - Follow user
+PUT  /api/v1/users/unfollow     - Unfollow user
+GET  /api/v1/users/search-users - Search users
+```
+
+### Chat Endpoints
+```
+POST /api/v1/chat/request              - Send chat request
+GET  /api/v1/chat/chats                - Get user chats
+GET  /api/v1/chat/chat/:id/messages    - Get chat messages
+POST /api/v1/chat/chat/:id/message     - Send message
+```
+
+### Notifications Endpoints
+```
+GET  /api/v1/notifications           - Get notifications
+PUT  /api/v1/notifications/mark-read - Mark as read
+GET  /api/v1/notifications/unread-count - Get unread count
+```
+
+## 🚀 Deployment
+
+### Environment Configuration
+
+**Production Backend:**
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname
+JWT_SECRET=super-secure-production-key-min-64-characters
+CLIENT_URL=https://yourdomain.com
+```
+
+**Production Frontend:**
+```env
+REACT_APP_SERVER_URL=https://api.yourdomain.com
+REACT_APP_CLOUDINARY_CLOUD_NAME=prod-cloud-name
+```
+
+### Deployment Steps
+
+1. **Backend (Railway/Render/Heroku):**
+   ```bash
+   # Add environment variables in platform dashboard
+   # Deploy from GitHub or direct upload
+   ```
+
+2. **Frontend (Vercel/Netlify):**
+   ```bash
+   # Add environment variables in platform dashboard
+   # Deploy from GitHub with automatic builds
+   ```
+
+## 👨‍💻 Developer
+
+**Ashwani Kumar Singh**  
+Full Stack Developer | MERN Stack Specialist
+
+- **Portfolio:** [ashwanisingh-portfolio.netlify.app](https://ashwanisingh-portfolio.netlify.app/)
+- **LeetCode:** 566+ problems solved
+- **Experience:** Programmer Analyst Trainee @ Cognizant
+- **Skills:** React.js, Node.js, MongoDB, Express.js, JWT, Socket.IO
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+**⚠️ Security Notice:** Never commit `.env` files to version control. Always use `.env.example` for sharing configuration templates.

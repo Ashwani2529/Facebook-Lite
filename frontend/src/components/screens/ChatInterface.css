@@ -1,0 +1,218 @@
+/* Chat Interface Responsive Styles */
+
+/* Mobile-first approach */
+@media (max-width: 768px) {
+  .chat-container {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+
+  .chat-header {
+    padding: 12px 16px;
+  }
+
+  .chat-header h6 {
+    font-size: 16px;
+  }
+
+  .chat-messages {
+    padding: 8px 12px;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+  }
+
+  .chat-input-container {
+    padding: 8px 12px;
+  }
+
+  .chat-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 16px;
+  }
+
+  .send-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .message-bubble {
+    max-width: 80%;
+  }
+
+  .chat-container {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 1025px) {
+  .chat-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .message-bubble {
+    max-width: 75%;
+  }
+}
+
+/* Message animations */
+.message-bubble {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Typing Indicator Animation */
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+  animation: typingPulse 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes typingPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Dark mode typing dots */
+.dark .typing-dot {
+  background-color: #6b7280;
+}
+
+/* Smooth scrolling */
+.chat-messages {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Dark mode scrollbar */
+.dark .chat-messages::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .chat-messages::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark .chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Send button hover effect */
+.send-button:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+.send-button:active {
+  transform: scale(0.95);
+}
+
+/* Input focus effect */
+.chat-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6 !important;
+}
+
+/* Online status indicator (for future use) */
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background-color: #10b981;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+}
+
+/* Message status indicators */
+.message-status {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+/* Responsive adjustments for very small screens */
+@media (max-width: 480px) {
+  .chat-header {
+    padding: 8px 12px;
+  }
+
+  .chat-header h6 {
+    font-size: 14px;
+  }
+
+  .message-bubble {
+    max-width: 90%;
+    padding: 8px 12px;
+  }
+
+  .chat-input {
+    padding: 8px 12px;
+    font-size: 16px;
+  }
+
+  .send-button {
+    width: 36px;
+    height: 36px;
+  }
+} 

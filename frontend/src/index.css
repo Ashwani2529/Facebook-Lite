@@ -1,174 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom cursor */
 body {
-  background-color: #161925;
-  width: 100%;
-  height: 100%;
-  color: #fff;
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" fill="%233b82f6" stroke="%23ffffff" stroke-width="2"/></svg>') 10 10, auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.box {
-  margin-top: 20px;
-  border-radius: 10px;
-  background-color: #23395b;
-}
-
-.row {
-  width: 75%;
-  display: flex;
-  margin: auto;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.andchor {
-  justify-content: center;
-  display: flex;
-  margin: auto;
-  margin-top: 10px;
-  font-family: "Roboto", sans-serif;
-  font-weight: bold;
-}
-
-button {
-  height: 50px;
-  font-family: "Roboto", sans-serif;
-}
-
-.textArea {
-  margin: auto;
-  background-color: transparent;
-}
-
-h1 {
-  font-weight: bold;
-  font-size: 50px;
-}
-
-a {
-  text-decoration: none;
-}
-
-.home {
-  font-weight: bold;
-  font-size: 40px;
-}
-
-.anchor {
-  font-weight: bold;
-  font-size: 40px;
-}
-
-.acc {
-  text-align: center;
-  font-weight: bold;
-  font-size: 30px;
-}
-
-.newAccBox {
-  border-radius: 10px;
-}
-
-#filled-basic {
-  width: 300px;
-}
-
-.navdiv {
-  float: right;
-  display: flex;
-  margin-top: 15px;
-}
-
-.navvbar {
-  background-color: transparent;
-}
-
-.textAreaa {
-  width: max-content;
-  height: fit-content;
-  background-color: rgb(218, 221, 228);
-  border: none;
-  border-radius: 20px;
-  outline: none;
-}
-
-.post {
-  border-radius: 15px;
-  margin: 10px;
-}
-
-.sidebar {
-  height: 250px;
-}
-
-.image {
-  display: flex;
-  justify-content: center;
-}
-
-img {
-  border-radius: 10px;
-}
-
-.picture {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.popup-box {
-  position: fixed;
-  width: 100%;
-  height: 50vh;
-  top: 0;
-  left: 0;
-}
-
-.boxx {
-  position: relative;
-  width: 25%;
-  margin: 0 auto;
-  height: 60vh;
-  margin-top: calc(100vh - 85vh - 20px);
-  background-color: #23395b;
-  border-radius: 4px;
-  padding: 20px;
-  border: 1px solid #999;
-  overflow: auto;
-  border: none;
-  border-radius: 20px;
-}
-
-.close-icon {
-  content: "x";
+a, button, [role="button"], input[type="button"], input[type="submit"] {
   cursor: pointer;
-  position: fixed;
-  right: calc(38% - 10px);
-  top: calc(100vh - 85vh - 20px);
-  background: #161925;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  line-height: 20px;
-  text-align: center;
-  border: 1px solid #999;
-  font-size: 20px;
 }
 
-.popupitems {
-  display: grid;
-  justify-content: center;
-  align-items: center;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.comment {
-  margin-left: 10px;
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800 rounded-full;
 }
 
-.paragraph {
-  font-family: "Roboto", sans-serif;
-  font-size: 20px;
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 dark:hover:bg-gray-500;
 }
 
-.itemsInSearch:hover {
-  background: #23395b;
-  border-radius: 10px;
+/* Global styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply antialiased text-gray-900;
+  @apply bg-gray-50 dark:bg-facebook-dark;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom components */
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-800;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-200;
+  }
+
+  .btn-facebook {
+    @apply bg-facebook-primary hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-200;
+  }
+
+  .card {
+    @apply bg-white dark:bg-facebook-card rounded-xl shadow-soft hover:shadow-medium transition-all duration-300;
+  }
+
+  .input-field {
+    @apply w-full py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-800 focus:border-primary-500 transition-all duration-200 text-gray-900 dark:text-white;
+  }
+
+  .navbar {
+    @apply bg-white/80 dark:bg-facebook-card/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50;
+  }
+
+  .sidebar {
+    @apply bg-white dark:bg-facebook-card rounded-xl shadow-soft p-6 h-fit;
+  }
+
+  .post-card {
+    @apply bg-white dark:bg-facebook-card rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 mb-6;
+  }
+
+  .avatar {
+    @apply rounded-full object-cover ring-2 ring-white dark:ring-gray-800;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .glass-effect {
+    @apply bg-white/20 dark:bg-black/20 backdrop-blur-md border border-white/30 dark:border-white/10;
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(1deg); }
+  66% { transform: translateY(-5px) rotate(-1deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply inline-block w-8 h-8 border-4 border-gray-200 border-t-primary-600 rounded-full animate-spin;
+}
+
+/* Dark mode utilities */
+.dark-mode-toggle {
+  @apply fixed bottom-4 right-4 z-50 p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg transition-all duration-300 transform hover:scale-110;
+}
+
+/* Mobile responsive utilities */
+@media (max-width: 768px) {
+  .mobile-padding {
+    @apply px-4;
+  }
+  
+  .mobile-text {
+    @apply text-sm;
+  }
+}
+
+/* Focus states for accessibility */
+.focus-visible {
+  @apply outline-none ring-4 ring-primary-200 dark:ring-primary-800;
+}
+
+/* Custom toaster styles */
+.toast-success {
+  @apply bg-green-500 text-white;
+}
+
+.toast-error {
+  @apply bg-red-500 text-white;
 }

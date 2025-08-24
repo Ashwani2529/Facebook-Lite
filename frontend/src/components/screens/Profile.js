@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import Homenav from './Homenav';
+import Navbar from '../layout/Navbar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import PopUpDailoge from './PopUpDailoge';
 import Profilecards from './Profilecards';
-import IconButton from '@material-ui/core/IconButton';
-import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import {IconButton} from '@mui/material';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import imageCompression from "browser-image-compression";
 import {toast} from 'react-toastify';
 import {UserContext} from '../../App';
 import {InputGroup,FormControl} from "react-bootstrap";
 import SERVER_URL from '../../server_url';
+import { generateAvatarPlaceholder } from '../../utils/avatarUtils';
 const Profile = () => {
   
   const [isOpen,setIsOpen] = useState(false);
@@ -27,12 +28,12 @@ const Profile = () => {
 
   useEffect(()=>{
 
-    fetch(`${SERVER_URL}/mypost`,{
+    fetch(`${SERVER_URL}/api/v1/posts/mypost`,{
       headers:{
         'Authorization':'Bearer '+localStorage.getItem('jwt')
       }
     }).then(res=>res.json())
-    .then(result=>setPics(result))
+    .then(result=>setPics(result.posts || []))
   },[])
 
   
@@ -66,16 +67,19 @@ const Profile = () => {
 
   };
 
-  const updateData = () =>{
+  const updateData = () => {
     
     if(img.compressedBlob){
     console.log(img.compressedBlob)
     const data = new FormData()
     data.append("file", img.compressedBlob)
-    data.append("upload_preset", "Cloudy")
-    data.append("cloud_name", "dtrsgpw04")
-    
-    fetch("https://api.cloudinary.com/v1_1/dtrsgpw04/image/upload", {
+          const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || "dtrsgpw04";
+      const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || "Cloudy";
+      
+      data.append("upload_preset", uploadPreset);
+      data.append("cloud_name", cloudName);
+      
+      fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: "post",
       body: data
     }).then(res => res.json()).then((data) => {
@@ -83,7 +87,7 @@ const Profile = () => {
       localStorage.setItem("user",JSON.stringify({...state,pic:data.url}))
       dispatch({type:"UPDATEPIC",payload:data.url})
 
-      fetch(`${SERVER_URL}/updatepic`,{
+      fetch(`${SERVER_URL}/api/v1/users/updatepic`,{
         method:"put",
         headers:{
           "Content-Type":"application/json",
@@ -103,20 +107,29 @@ const Profile = () => {
 
   return(
     <>
-    <Homenav />
+    <Navbar />
     <div className='container-fluid'>
       <div className='row'>
         
         
         <div className='col-md-4 picture'>
-          <img height='300px' width='300px' src={state ? state.pic : "loading"} alt='imaheHere'></img>
+          <img 
+            height='300px' 
+            width='300px' 
+            src={state?.pic || generateAvatarPlaceholder(state?.name || 'User', 300)} 
+            alt='Profile Picture'
+            style={{ borderRadius: '15px', objectFit: 'cover' }}
+            onError={(e) => {
+              e.target.src = generateAvatarPlaceholder(state?.name || 'User', 300);
+            }}
+          />
         </div>
 
         <div className='col-md-8 d-block'>
           
           <div className='d-flex'>
-            <h3 className='m-4'>{state ? state.name : "wait.." }</h3>
-            <Link className='m-4 fixed'><button className='btn btn-outline-warning' variant="contained"  onClick={togglePopus}>Edit Profile</button></Link> 
+            <h3 className='m-4 text-gray-900 dark:text-white'>{state ? state.name : "wait.." }</h3>
+ 
             {isOpen && <PopUpDailoge
               togglePopus = {togglePopus} content={<>
                 
@@ -179,14 +192,21 @@ const Profile = () => {
             />}
           </div>
 
-          <div className='d-flex'>
-            <p className='my-5 p-3'><strong>{mypics ? mypics.length : "wait.." }</strong> Posts</p>
-            <p className='my-5 p-3'><strong>{state ? state.followers.length : "0"}</strong> Followers</p>
-            <p className='my-5 p-3'><strong>{state ? state.following.length : "0"}</strong> Followings</p>
+          <div className='d-flex justify-content-between align-items-center'>
+            <div className='d-flex'>
+              <p className='my-5 p-3 text-gray-900 dark:text-white'><strong>{mypics ? mypics.length : "wait.." }</strong> Posts</p>
+              <p className='my-5 p-3 text-gray-900 dark:text-white'><strong>{state ? state.followers.length : "0"}</strong> Followers</p>
+              <p className='my-5 p-3 text-gray-900 dark:text-white'><strong>{state ? state.following.length : "0"}</strong> Followings</p>
+            </div>
+            <div className='my-5 p-3'>
+             <Link to="/settings" className='btn btn-primary btn-sm'>
+              <i className="fa fa-cog me-2"></i>Settings
+             </Link>
+            </div>
           </div>
             
           <div>
-            <p className='m-3'>Full Stack Developer</p>
+                            <p className='m-3 text-gray-900 dark:text-white'>{state?.bio || 'No bio available'}</p>
          
           </div>
           

@@ -1,9 +1,9 @@
 import React,{useContext} from 'react';
-import { Link, useHistory } from 'react-router-dom'
-import PersonOutlineSharpIcon from '@material-ui/icons/PersonOutlineSharp';
-import HomeOutlinedIcon from '@material-ui/icons/HomeOutlined';
-import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
-import ExitToAppOutlinedIcon from '@material-ui/icons/ExitToAppOutlined';
+import { Link, useNavigate } from 'react-router-dom'
+import PersonOutlineSharpIcon from '@mui/icons-material/PersonOutlineSharp';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import ExitToAppOutlinedIcon from '@mui/icons-material/ExitToAppOutlined';
 import {UserContext} from '../../App'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {Navbar, Container , Nav} from "react-bootstrap";
@@ -12,7 +12,7 @@ import {Navbar, Container , Nav} from "react-bootstrap";
 const Homenav = () => {
   // eslint-disable-next-line
   const {state,dispatch} = useContext(UserContext)
-  const history = useHistory();
+  const navigate = useNavigate();
   return(
     <>
     <Navbar collapseOnSelect expand="lg" variant="dark" style={{backgroundColor:'#23395b'}}>
@@ -32,7 +32,7 @@ const Homenav = () => {
             <Nav.Link eventKey={2} href="#memes"><Link  onClick={()=>{
                 localStorage.clear()
                 dispatch({type:"CLEAR"})
-                history.push('/login')
+                navigate('/login')
               }} className="navbar-brand d-flex p-2 text-warning " style={{fontFamily:'"Roboto", sans-serif'}}>Logout<ExitToAppOutlinedIcon style={{marginTop:'3px',marginLeft:'2px'}} /></Link></Nav.Link>
         </Nav>
         </Navbar.Collapse>

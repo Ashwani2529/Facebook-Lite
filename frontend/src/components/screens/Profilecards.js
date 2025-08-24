@@ -12,7 +12,7 @@ const Profilecards = (props) => {
             <img src={props.url} alt='thisImage' className='my-3' width='250px' height='250px'/>
             </div>
             
-            <p style={{textAlign:'center'}} className='paragraph'>{props.body}</p>
+            <p style={{textAlign:'center'}} className='paragraph text-white'>{props.body}</p>
         </div> 
   )
 }
