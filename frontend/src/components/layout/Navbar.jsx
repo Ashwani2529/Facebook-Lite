@@ -279,7 +279,7 @@ const Navbar = () => {
                   style={{ maxHeight: '400px' }}
                 >
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-400 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-black">
                       Notifications
                     </h3>
                     {notifications.some(n => !n.read) && (
@@ -321,7 +321,7 @@ const Navbar = () => {
                           }`}
                         >
                           <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <div className="dark:text-black w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                               {notification.type === 'like' && <span className="text-red-500">❤️</span>}
                               {notification.type === 'comment' && <span className="text-blue-500">💬</span>}
                               {notification.type === 'follow' && <span className="text-green-500">👤</span>}
@@ -331,10 +331,10 @@ const Navbar = () => {
                             </div>
                           </div>
                           <div className="ml-3 flex-1">
-                            <p className="text-sm text-gray-900 dark:text-white">
+                            <p className="text-sm text-gray-900 dark:text-black">
                               {notification.message}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-800 mt-1">
                               {notification.time}
                             </p>
                           </div>

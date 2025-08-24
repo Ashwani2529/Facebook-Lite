@@ -11,6 +11,7 @@ import {
 } from 'react-icons/hi';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
+import io from 'socket.io-client';
 
 import { UserContext } from '../../App';
 import Avatar from './Avatar';
@@ -43,10 +44,33 @@ const PostCard = ({
   const [isCommenting, setIsCommenting] = useState(false);
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikesCount, setLocalLikesCount] = useState(likes?.length || 0);
+  const [localComments, setLocalComments] = useState(comments || []);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   const isOwner = postedById === state?._id;
+
+  // Socket.IO setup for real-time comments
+  useEffect(() => {
+    const socket = io(SERVER_URL || 'http://localhost:5000');
+
+    // Listen for new comments on this post
+    socket.on('new_comment', (data) => {
+      if (data.postId === id) {
+        console.log('📝 Received new comment for post:', id);
+        setLocalComments(prev => [...prev, data.comment]);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [id]);
+
+  // Update local comments when post comments change
+  useEffect(() => {
+    setLocalComments(comments || []);
+  }, [comments]);
 
   // Check if current user is following the post author
   useEffect(() => {
@@ -106,8 +130,10 @@ const PostCard = ({
       });
 
       if (response.ok) {
+        const result = await response.json();
         setCommentText('');
-        // updateFunc?.(result);
+        // Comment will be added via Socket.IO broadcast automatically
+        console.log('📝 Comment added successfully');
       }
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -116,6 +142,8 @@ const PostCard = ({
       setIsCommenting(false);
     }
   };
+
+
 
   // Handle follow/unfollow user
   const handleToggleFollow = async () => {
@@ -301,7 +329,7 @@ const PostCard = ({
               className="hover:underline cursor-pointer"
               onClick={() => setShowComments(!showComments)}
             >
-              {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+              {localComments.length} {localComments.length === 1 ? 'comment' : 'comments'}
             </span>
           </div>
         </div>
@@ -354,8 +382,8 @@ const PostCard = ({
                       <textarea
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
-                        onKeyPress={handleCommentKeyPress}
-                        placeholder="Write a comment..."
+                        onKeyDown={handleCommentKeyPress}
+                        placeholder="Write a comment... (Press Enter to send, Shift+Enter for new line)"
                         className="flex-1 resize-none rounded-2xl bg-gray-100 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white border-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                         rows="1"
                       />
@@ -375,7 +403,7 @@ const PostCard = ({
 
               {/* Comments List */}
               <div className="max-h-96 overflow-y-auto">
-                {comments.map((comment, index) => (
+                {localComments.map((comment, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -20 }}

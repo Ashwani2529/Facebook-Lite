@@ -133,7 +133,6 @@ router.get('/test', (req, res) => {
  */
 router.post('/signin', catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-  console.log(email, password, "hello from handler");
 
   // Basic validation
   if (!email || !password) {

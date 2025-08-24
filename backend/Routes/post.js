@@ -228,6 +228,26 @@ router.put('/unlike', login, async (req, res) => {
         message: `${req.user.name} commented on your post`,
         relatedPost: updatedPost._id
       });
+
+      // Emit real-time comment update via Socket.IO
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('new_comment', {
+          postId: postId,
+          comment: {
+            text: text.trim(),
+            postedBy: {
+              _id: req.user._id,
+              name: req.user.name,
+              email: req.user.email,
+              pic: req.user.pic
+            },
+            _id: updatedPost.comments[updatedPost.comments.length - 1]._id
+          },
+          post: updatedPost
+        });
+        console.log(`📝 Comment broadcasted for post: ${postId}`);
+      }
   
       res.json(updatedPost);
     } catch (err) {

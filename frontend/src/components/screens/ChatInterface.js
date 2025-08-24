@@ -392,7 +392,13 @@ const ChatInterface = () => {
                 setNewMessage(e.target.value);
                 handleTyping();
               }}
-              placeholder="Type a message..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage(e);
+                }
+              }}
+              placeholder="Type a message... (Press Enter to send)"
               className="chat-input form-control rounded-pill px-4 py-2 border-0 bg-gray-100 dark:bg-gray-700 dark:text-white"
               style={{ resize: 'none' }}
               disabled={sending}

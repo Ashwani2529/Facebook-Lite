@@ -114,14 +114,13 @@ router.put('/unfollow', login, async (req, res) => {
             $pull: { following: unfollowid }
         }, { new: true }).select("-password");
 
-        console.log('Unfollow successful');
+                console.log('Unfollow successful');
         res.json({ success: true, user: updatedUser });
     } catch (err) {
         console.log('Unfollow error:', err);
         return res.status(500).json({ error: "Failed to unfollow user" });
     }
-}
-)
+});
 
 // Update profile picture
 router.put('/updatepic', login, (req, res) => {

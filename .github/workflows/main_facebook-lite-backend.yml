@@ -51,7 +51,7 @@ jobs:
 
       # Small delay to avoid SCM container restart conflict
       - name: Wait before deploy
-        run: sleep 20
+        run: sleep 25
 
       - name: Login to Azure
         uses: azure/login@v2
