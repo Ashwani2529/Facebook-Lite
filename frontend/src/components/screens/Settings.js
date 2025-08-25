@@ -239,7 +239,7 @@ const Settings = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
             Account Settings
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-300 mt-2">
             Update your profile information and account settings
           </p>
         </motion.div>
@@ -442,7 +442,7 @@ const Settings = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-evenly pt-5 border-t border-gray-200 dark:border-gray-700">
                 <Button
                   type="button"
                   variant="outline"

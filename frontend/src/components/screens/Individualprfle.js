@@ -149,7 +149,7 @@ const Individualprfle = () => {
   // Get chat request button text and variant
   const getChatButtonConfig = () => {
     if (!chatRequestStatus || chatRequestStatus.status === null) {
-      return { text: 'Send Chat Request', variant: 'success', icon: HiChat, disabled: false };
+      return { text: 'Send Request', variant: 'success', icon: HiChat, disabled: false };
     }
     
     const { status, isSender } = chatRequestStatus;
@@ -168,7 +168,7 @@ const Individualprfle = () => {
       return { text: 'Request Declined', variant: 'outline', icon: HiChat, disabled: true };
     }
     
-    return { text: 'Send Chat Request', variant: 'success', icon: HiChat, disabled: false };
+    return { text: 'Send Request', variant: 'success', icon: HiChat, disabled: false };
   };
 
   return (
@@ -196,13 +196,13 @@ const Individualprfle = () => {
 
             {/* Profile Info */}
             <div className='col-md-8 d-block'>
-              <div className='d-flex align-items-center'>
+              <div className='d-block align-items-center'>
                 <h3 className='m-4 text-gray-900 dark:text-white'>{userProfile.user.name}</h3>
-                <div className='d-flex gap-3 m-4'>
+                <div className='d-flex gap-2 m-2'>
                   <button 
                     onClick={handleToggleFollow}
                     disabled={isFollowLoading}
-                    className={`btn ${isFollowing ? 'btn-outline-primary' : 'btn-primary'} px-4 py-2 d-flex align-items-center`}
+                    className={`btn ${isFollowing ? 'btn-outline-primary' : 'btn-primary'} px-2 py-2 d-flex align-items-center`}
                   >
                     {isFollowLoading ? (
                       <span>Loading...</span>
@@ -245,12 +245,12 @@ const Individualprfle = () => {
                           console.error('Find chat error:', error);
                           alert('Failed to open chat');
                         }
-                      } else if (!config.disabled && config.text === 'Send Chat Request') {
+                      } else if (!config.disabled && config.text === 'Send Request') {
                         handleChatRequest();
                       }
                     }}
                     disabled={isChatRequestLoading || getChatButtonConfig().disabled}
-                    className={`btn btn-${getChatButtonConfig().variant} px-4 py-2 d-flex align-items-center`}
+                    className={`btn btn-${getChatButtonConfig().variant} px-2 py-2 d-flex align-items-center`}
                   >
                     {isChatRequestLoading ? (
                       <span>Loading...</span>

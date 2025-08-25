@@ -24,7 +24,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Avatar from '../ui/Avatar';
 import SERVER_URL from '../../server_url';
-
+import logo from './logo2.png';
 const Navbar = () => {
   const { state, dispatch } = useContext(UserContext);
   const { isDarkMode, toggleDarkMode } = useTheme();
@@ -159,9 +159,10 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-white font-bold text-sm">FL</span>
+            <Link to="/" className="flex items-center space-x-2 group no-underline">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                {/* <span className="text-white font-bold text-sm">FL</span> */}
+                <img src={logo} alt="logo" className="w-8 h-8" />
               </div>
               <span className="font-bold text-xl bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
                 Facebook Lite
@@ -397,7 +398,7 @@ const Navbar = () => {
                   <Link
                     to="/profile"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-200"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-200 no-underline"
                   >
                     <HiUser className="w-4 h-4 mr-3" />
                     Profile
@@ -406,7 +407,7 @@ const Navbar = () => {
                   <Link
                     to="/settings"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-200"
+                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-200 no-underline"
                   >
                     <HiCog className="w-4 h-4 mr-3" />
                     Settings
@@ -417,10 +418,10 @@ const Navbar = () => {
                     href="https://ashwanisingh-portfolio.netlify.app/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative flex items-center px-4 py-3 text-sm font-medium bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white hover:from-purple-700 hover:via-pink-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 m-2 rounded-lg shadow-lg hover:shadow-xl overflow-hidden"
+                    className="group relative flex items-center px-4 py-3 text-sm font-medium bg-gradient-to-r from-gray-400 via-gray-700 to-gray-400 text-white hover:from-gray-700 hover:via-gray-700 hover:to-gray-700 transform hover:scale-105 transition-all duration-300 m-2 rounded-lg shadow-lg hover:shadow-xl overflow-hidden no-underline"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 rounded-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-gray-400 via-gray-700 to-gray-400 rounded-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="relative flex items-center">
                       <HiCode className="w-4 h-4 mr-3 animate-pulse" />
                       <span className="font-semibold tracking-wide">Developer</span>
@@ -428,7 +429,7 @@ const Navbar = () => {
                     </div>
                     
                     {/* Glow Effect */}
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 rounded-lg opacity-30 group-hover:opacity-60 blur transition-all duration-300 group-hover:duration-200 -z-10"></div>
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-gray-400 via-gray-700 to-gray-400 rounded-lg opacity-30 group-hover:opacity-60 blur transition-all duration-300 group-hover:duration-200 -z-10"></div>
                   </a>
                   
                   <hr className="my-2 border-gray-200 dark:border-gray-700" />
@@ -472,6 +473,9 @@ const Navbar = () => {
             {/* Mobile Search */}
             <div className="mb-4 search-container relative">
               <Input
+              style={{
+                paddingLeft: '42px',
+              }}
                 type="text"
                 placeholder="Search users..."
                 value={searchQuery}

@@ -115,7 +115,7 @@ const Card = (props) => {
               <div className='float-end'>
                 {(props.postedById === state._id) && <button className='btn btn-transparent' onClick={() => { deletePost(props.id) }}><DeleteRoundedIcon className='text-light'/></button>}
               </div>
-              <Link style={{color:'white', fontSize:'35px'}} to={ (props.postedById !== state._id) ?`profile/${props.postedById}` :`profile` } className="btn">{props.postedBy}</Link>
+                              <Link style={{color:'white', fontSize:'35px'}} to={ (props.postedById !== state._id) ?`profile/${props.postedById}` :`profile` } className="btn no-underline">{props.postedBy}</Link>
               <p style={{color:'white',fontSize:'25px'}} className='my-3'>{props.body}</p>
             </div>
             <div className='image p-2'>

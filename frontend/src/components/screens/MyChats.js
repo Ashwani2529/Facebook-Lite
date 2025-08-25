@@ -129,7 +129,7 @@ const MyChats = () => {
           <div className="col-lg-8 col-xl-6">
             {/* Header */}
             <div className="bg-gray-800 dark:bg-facebook-card rounded-xl shadow-lg mb-4 p-4">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-2xl font-bold text-gray-300 mb-4">
                 <HiChat className="inline me-2" size={24} />
                 My Chats
               </h2>
@@ -164,8 +164,8 @@ const MyChats = () => {
                   {chats.length === 0 ? (
                     <div className="text-center py-5">
                       <HiChat size={48} className="text-gray-400 mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400">No conversations yet</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">
+                      <p className="text-gray-500">No conversations yet</p>
+                      <p className="text-sm text-gray-400">
                         Send a chat request to start chatting with someone!
                       </p>
                     </div>
@@ -196,8 +196,8 @@ const MyChats = () => {
                             }}
                           />
                           <div className="flex-grow-1">
-                            <h6 className="mb-1 text-gray-900 dark:text-white">{otherUser.name}</h6>
-                            <p className="mb-0 text-sm text-gray-500 dark:text-gray-400">
+                            <h6 className="mb-1 text-gray-300">{otherUser.name}</h6>
+                            <p className="mb-0 text-sm text-gray-400">
                               {chat.lastMessage 
                                 ? `${chat.lastMessage.sender?.name === state.name ? 'You: ' : ''}${chat.lastMessage.content}`
                                 : 'Start a conversation'
@@ -220,8 +220,8 @@ const MyChats = () => {
                   {chatRequests.length === 0 ? (
                     <div className="text-center py-5">
                       <HiClock size={48} className="text-gray-400 mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400">No pending requests</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">
+                      <p className="text-gray-500">No pending requests</p>
+                      <p className="text-sm text-gray-400">
                         Chat requests will appear here
                       </p>
                     </div>
@@ -249,10 +249,10 @@ const MyChats = () => {
                             }}
                           />
                           <div className="flex-grow-1">
-                            <h6 className="mb-1 text-gray-900 dark:text-white">
+                            <h6 className="mb-1 text-gray-300">
                               {request.sender.name}
                             </h6>
-                            <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
+                            <p className="mb-2 text-sm text-gray-600">
                               {request.message || 'Wants to chat with you'}
                             </p>
                             <small className="text-gray-400">

@@ -17,7 +17,7 @@ const Homenav = () => {
     <>
     <Navbar collapseOnSelect expand="lg" variant="dark" style={{backgroundColor:'#23395b'}}>
       <Container className='text-center'>
-        <Navbar.Brand><Link to='/' className="navbar-brand anchor text-warning">Facebook Lite 🔥</Link></Navbar.Brand>
+        <Navbar.Brand><Link to='/' className="navbar-brand anchor text-warning no-underline">Facebook Lite 🔥</Link></Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav" className="justify-content-end"> 
         

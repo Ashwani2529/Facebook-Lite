@@ -322,11 +322,11 @@ const PostCard = ({
         {/* Post Stats */}
         <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <span className="hover:underline cursor-pointer">
+                                <span className="cursor-pointer">
               {localLikesCount} {localLikesCount === 1 ? 'like' : 'likes'}
             </span>
             <span 
-              className="hover:underline cursor-pointer"
+                                  className="cursor-pointer"
               onClick={() => setShowComments(!showComments)}
             >
               {localComments.length} {localComments.length === 1 ? 'comment' : 'comments'}
@@ -383,7 +383,7 @@ const PostCard = ({
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         onKeyDown={handleCommentKeyPress}
-                        placeholder="Write a comment... (Press Enter to send, Shift+Enter for new line)"
+                        placeholder="Comment"
                         className="flex-1 resize-none rounded-2xl bg-gray-100 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white border-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                         rows="1"
                       />
