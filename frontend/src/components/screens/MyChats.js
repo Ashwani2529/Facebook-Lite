@@ -195,9 +195,9 @@ const MyChats = () => {
                               e.target.src = generateAvatarPlaceholder(otherUser.name, 50);
                             }}
                           />
-                          <div className="flex-grow-1">
+                          <div className="flex-grow-1 overflow-hidden">
                             <h6 className="mb-1 text-gray-300">{otherUser.name}</h6>
-                            <p className="mb-0 text-sm text-gray-400">
+                            <p className="w-85 mb-0 text-sm text-gray-400">
                               {chat.lastMessage 
                                 ? `${chat.lastMessage.sender?.name === state.name ? 'You: ' : ''}${chat.lastMessage.content}`
                                 : 'Start a conversation'

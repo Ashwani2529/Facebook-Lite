@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiUser, HiMail, HiLockClosed, HiPhone, HiCalendar, HiLocationMarker, HiSave } from 'react-icons/hi';
+import { HiUser, HiMail, HiLockClosed, HiPhone, HiCalendar, HiLocationMarker, HiSave, HiTrash, HiExclamationCircle } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 import { UserContext } from '../../App';
@@ -34,6 +34,9 @@ const Settings = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (state) {
@@ -222,6 +225,41 @@ const Settings = () => {
       toast.error('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle account deletion
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm');
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${SERVER_URL}/api/v1/users/delete-account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Account deleted successfully');
+        // Clear local storage and redirect
+        localStorage.clear();
+        dispatch({ type: 'CLEAR' });
+        navigate('/login');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Failed to delete account');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -464,9 +502,103 @@ const Settings = () => {
               </div>
             </form>
           </Card>
+
+          {/* Danger Zone */}
+          <Card className="border-red-200 dark:border-red-800">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+                Danger Zone
+              </h3>
+              
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <HiExclamationCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">
+                      Delete Account
+                    </h4>
+                    <p className="text-red-700 text-sm mb-4">
+                      Once you delete your account, there is no going back. This will permanently delete your profile, posts, and all associated data.
+                    </p>
+                    <Button
+                      variant="danger"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="flex items-center space-x-2"
+                    >
+                      <HiTrash className="w-4 h-4" />
+                      <span>Delete Account</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         </motion.div>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999 }}>
+          <div className="bg-white dark:bg-gray-800 rounded-3 p-6 mx-3" style={{ maxWidth: '500px', width: '100%' }}>
+            <div className="text-center mb-4">
+              <div className="mb-3">
+                <HiExclamationCircle className="text-red-500 mx-auto" size={48} />
+              </div>
+              <h3 className="text-xl font-semibold text-red-600 mb-2">
+                Delete Account
+              </h3>
+              <p className="text-gray-600 mb-4">
+                This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+              </p>
+              
+              <div className="text-left mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type <strong>DELETE</strong> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="w-100 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  placeholder="Type DELETE here"
+                />
+              </div>
+            </div>
+            
+            <div className="d-flex gap-3 justify-content-end">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                disabled={isDeletingAccount}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteAccount}
+                disabled={isDeletingAccount || deleteConfirmText !== 'DELETE'}
+                className="flex items-center space-x-2"
+              >
+                {isDeletingAccount ? (
+                  <>
+                    <div className="spinner-border spinner-border-sm me-2" role="status" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <HiTrash className="w-4 h-4" />
+                    Delete Account
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

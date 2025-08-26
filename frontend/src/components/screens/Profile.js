@@ -102,7 +102,19 @@ const Profile = () => {
     }
   }
 
+  // Handle post update
+  const handlePostUpdate = (postId, newCaption) => {
+    setPics(prevPosts => 
+      prevPosts.map(post => 
+        post._id === postId ? { ...post, body: newCaption } : post
+      )
+    );
+  };
 
+  // Handle post deletion
+  const handlePostDelete = (postId) => {
+    setPics(prevPosts => prevPosts.filter(post => post._id !== postId));
+  };
 
 
   return (
@@ -210,11 +222,18 @@ const Profile = () => {
         </div>
         <div className='row'>
           {
-
             mypics.map((item) => {
-
-              return <Profilecards url={item.photo} body={item.body} />;
-
+              return (
+                <Profilecards 
+                  key={item._id}
+                  postId={item._id}
+                  url={item.photo} 
+                  body={item.body}
+                  onPostUpdate={handlePostUpdate}
+                  onPostDelete={handlePostDelete}
+                  isOwner={true}
+                />
+              );
             })
           }
         </div>

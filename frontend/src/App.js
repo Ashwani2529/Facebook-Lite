@@ -17,6 +17,7 @@ import Settings from './components/screens/Settings';
 import Following from './components/screens/Following';
 import MyChats from './components/screens/MyChats';
 import ChatInterface from './components/screens/ChatInterface';
+import PostModal from './components/screens/PostModal';
 
 // Context and Reducers
 import { reducer, initialState } from './reducers/userReducer';
@@ -228,6 +229,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <ChatInterface />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/post/:postId" 
+            element={
+              <ProtectedRoute>
+                <PostModal />
               </ProtectedRoute>
             } 
           />

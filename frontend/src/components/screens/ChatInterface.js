@@ -2,9 +2,12 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { UserContext } from '../../App';
 import { generateAvatarPlaceholder } from '../../utils/avatarUtils';
-import { HiArrowLeft, HiPaperAirplane, HiPhotograph, HiEmojiHappy, HiDotsVertical } from 'react-icons/hi';
+import { HiArrowLeft, HiPaperAirplane, HiPhotograph, HiEmojiHappy, HiDotsVertical, HiX } from 'react-icons/hi';
 import SERVER_URL from '../../server_url';
 import io from 'socket.io-client';
+import toast from 'react-hot-toast';
+import imageCompression from "browser-image-compression";
+import EmojiPicker from 'emoji-picker-react';
 import './ChatInterface.css';
 
 const ChatInterface = () => {
@@ -20,8 +23,18 @@ const ChatInterface = () => {
   const [socket, setSocket] = useState(null);
   const [typing, setTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
+  
+  // Image upload states
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // Emoji picker state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  
   const messagesEndRef = useRef(null);
   const typingTimerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (chatId && state) {
@@ -53,13 +66,11 @@ const ChatInterface = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('🔗 Connected to Socket.IO server');
       newSocket.emit('join_chat', chatId);
     });
 
     // Listen for new messages
     newSocket.on('new_message', (data) => {
-      console.log('📨 Received new message:', data);
       if (data.chatId === chatId) {
         setMessages(prev => {
           // Check if message already exists to avoid duplicates
@@ -72,21 +83,18 @@ const ChatInterface = () => {
 
     // Listen for typing indicators
     newSocket.on('user_typing', (data) => {
-      console.log('👤 User typing:', data);
       if (data.userId !== state._id) {
         setOtherUserTyping(true);
       }
     });
 
     newSocket.on('user_stopped_typing', (data) => {
-      console.log('👤 User stopped typing:', data);
       if (data.userId !== state._id) {
         setOtherUserTyping(false);
       }
     });
 
     newSocket.on('disconnect', () => {
-      console.log('❌ Disconnected from Socket.IO server');
     });
 
     setSocket(newSocket);
@@ -246,6 +254,180 @@ const ChatInterface = () => {
     return currentDate !== previousDate;
   };
 
+  // Handle image selection
+  const handleImageSelect = (file) => {
+    if (!file) {
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      console.log('❌ Invalid file type:', file.type);
+      toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      console.log('❌ File too large:', file.size);
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+        // Create preview
+      const imagePreviewUrl = URL.createObjectURL(file);
+      
+      setSelectedImage(file);
+      setImagePreview(imagePreviewUrl);
+    } catch (error) {
+      console.error('❌ Error creating image preview:', error);
+      toast.error('Failed to create image preview');
+    }
+  };
+
+  // Handle file input change
+  const handleFileChange = (e) => {
+    
+    const file = e.target.files[0];
+    
+    if (file) {
+      handleImageSelect(file);
+    } else {
+      console.log('❌ No file found in the selection');
+    }
+  };
+
+  // Remove selected image
+  const removeSelectedImage = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setSelectedImage(null);
+    setImagePreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Upload image to Cloudinary
+  const uploadImageToCloudinary = async (compressedImage) => {
+    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+    
+    const data = new FormData();
+    data.append("file", compressedImage);
+    data.append("upload_preset", uploadPreset);
+    data.append("cloud_name", cloudName);
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: "POST",
+        body: data
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      return result.secure_url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  // Send image message
+  const sendImageMessage = async () => {
+    if (!selectedImage || uploadingImage) return;
+
+    setUploadingImage(true);
+    setSending(true);
+
+    try {
+      // Compress image
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true
+      };
+      const compressedFile = await imageCompression(selectedImage, options);
+      
+      // Upload to Cloudinary
+      const imageUrl = await uploadImageToCloudinary(compressedFile);
+
+      // Send message with image
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${SERVER_URL}/api/v1/chat/chat/${chatId}/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: imageUrl,
+          messageType: 'image'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Remove selected image
+        removeSelectedImage();
+        toast.success('Image sent!');
+      } else {
+        throw new Error('Failed to send image');
+      }
+    } catch (error) {
+      console.error('Error sending image:', error);
+      toast.error('Failed to send image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      setSending(false);
+    }
+  };
+
+  // Handle emoji selection
+  const onEmojiClick = (emojiData, event) => {
+    setNewMessage(prev => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
+
+  // Function to make URLs clickable
+  const makeLinksClickable = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        const isPostLink = part.includes('/post/');
+        return (
+          <a 
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 bg-black font-bold hover:text-blue-700 underline"
+            style={{ color: '#1976d2' }}
+            onClick={(e) => {
+              if (isPostLink) {
+                // For post links, navigate within the app
+                e.preventDefault();
+                const postId = part.split('/post/')[1];
+                window.open(`/post/${postId}`, '_blank');
+              }
+            }}
+          >
+            {isPostLink ? 'View Post' : part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center bg-gray-50 dark:bg-facebook-dark" style={{ minHeight: '100vh' }}>
@@ -331,7 +513,21 @@ const ChatInterface = () => {
                   style={{ maxWidth: '75%' }}
                 >
                   <div className="message-content">
-                    <p className="mb-1 dark:text-black">{message.content}</p>
+                    {(message.type === 'image' || (message.content && message.content.includes('cloudinary.com'))) ? (
+                      <div className="message-image">
+                        <img 
+                          src={message.content} 
+                          alt="Shared image" 
+                          className="img-fluid rounded-3 mb-2"
+                          style={{ maxWidth: '200px', maxHeight: '200px', cursor: 'pointer' }}
+                          onClick={() => window.open(message.content, '_blank')}
+                        />
+                      </div>
+                    ) : (
+                      <p className="mb-1 dark:text-black">
+                        {makeLinksClickable(message.content)}
+                      </p>
+                    )}
                     <div className="d-flex align-items-center justify-content-end">
                       <small 
                         className={message.sender._id === state._id ? 'text-white-50' : 'text-gray-500'}
@@ -376,10 +572,21 @@ const ChatInterface = () => {
       {/* Message Input */}
       <div className="chat-input-container bg-white dark:bg-facebook-card p-3 border-top">
         <form onSubmit={sendMessage} className="d-flex align-items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+          
           <button 
             type="button" 
             className="btn btn-link p-2 text-gray-500"
             title="Attach Photo"
+            onClick={() => {
+                fileInputRef.current.click();
+            }}
           >
             <HiPhotograph size={20} />
           </button>
@@ -407,14 +614,26 @@ const ChatInterface = () => {
               type="button" 
               className="btn btn-link position-absolute end-0 top-50 translate-middle-y me-2 p-1"
               title="Emoji"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
               <HiEmojiHappy className="text-gray-500" size={20} />
             </button>
+            
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+              <div className="position-absolute" style={{ bottom: '60px', right: '10px', zIndex: 1000 }}>
+                <EmojiPicker 
+                  onEmojiClick={onEmojiClick}
+                  width={300}
+                  height={400}
+                />
+              </div>
+            )}
           </div>
           
           <button 
             type="submit" 
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && !selectedImage) || sending}
             className="send-button btn btn-primary rounded-circle p-2 d-flex align-items-center justify-content-center"
             style={{ width: '40px', height: '40px' }}
           >
@@ -428,7 +647,62 @@ const ChatInterface = () => {
           </button>
         </form>
       </div>
-    </div>
+
+        {/* Image Preview Modal */}
+        {selectedImage && (
+          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999 }}>
+            <div className="bg-white dark:bg-gray-800 rounded-3 p-4 mx-3" style={{ maxWidth: '500px', width: '100%' }}>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0 dark:text-white">Send Image</h5>
+                <button 
+                  type="button"
+                  className="btn btn-link p-0 text-gray-500"
+                  onClick={removeSelectedImage}
+                >
+                  <HiX size={24} />
+                </button>
+              </div>
+              
+              <div className="text-center mb-3">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="img-fluid rounded-3"
+                  style={{ maxHeight: '300px' }}
+                />
+              </div>
+              
+              <div className="d-flex gap-2 justify-content-end">
+                <button 
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={removeSelectedImage}
+                  disabled={uploadingImage}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={sendImageMessage}
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? (
+                    <>
+                      <div className="spinner-border spinner-border-sm me-2" role="status">
+                        <span className="visually-hidden">Uploading...</span>
+                      </div>
+                      Sending...
+                    </>
+                  ) : (
+                    'Send Image'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
   );
 };
 

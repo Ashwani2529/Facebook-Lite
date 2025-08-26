@@ -108,6 +108,11 @@ const userSchema = new Schema({
     default: ''
   },
 
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+
   followers: [{
     type: Schema.Types.ObjectId,
     ref: 'User'

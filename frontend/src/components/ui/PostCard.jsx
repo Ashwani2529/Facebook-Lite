@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   HiHeart, 
@@ -7,8 +7,12 @@ import {
   HiChat,
   HiPaperAirplane,
   HiUserAdd,
-  HiUserRemove
+  HiUserRemove,
+  HiShare,
+  HiX,
+  HiOutlineUserAdd 
 } from 'react-icons/hi';
+
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -24,6 +28,7 @@ const PostCard = ({
   className = '',
 }) => {
   const { state, dispatch } = useContext(UserContext);
+  const navigate = useNavigate();
   
   // Extract properties from post object safely
   const {
@@ -47,6 +52,16 @@ const PostCard = ({
   const [localComments, setLocalComments] = useState(comments || []);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+
+  // Share functionality states
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [chatContacts, setChatContacts] = useState([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [sharingToChat, setSharingToChat] = useState(null);
+
+  // Friend request states
+  const [friendRequestStatus, setFriendRequestStatus] = useState('none'); // none, sent, received, friends
+  const [loadingFriendRequest, setLoadingFriendRequest] = useState(false);
 
   const isOwner = postedById === state?._id;
 
@@ -78,6 +93,102 @@ const PostCard = ({
       setIsFollowing(state.following.includes(postedById));
     }
   }, [state?.following, postedById, isOwner]);
+
+  // Check friend request status
+  useEffect(() => {
+    if (!isOwner && postedBy?._id) {
+      checkFriendRequestStatus();
+    }
+  }, [postedBy?._id, isOwner]);
+
+  const checkFriendRequestStatus = async () => {
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${SERVER_URL}/api/v1/friends/status/${postedBy._id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFriendRequestStatus(data.status);
+      }
+    } catch (error) {
+      console.error('Error checking friend request status:', error);
+    }
+  };
+
+  // Handle friend request
+  const handleFriendRequest = async () => {
+    if (loadingFriendRequest) return;
+
+    setLoadingFriendRequest(true);
+    try {
+      const token = localStorage.getItem('jwt');
+      let endpoint, method;
+
+      if (friendRequestStatus === 'none') {
+        endpoint = '/api/v1/friends/send-request';
+        method = 'POST';
+      } else if (friendRequestStatus === 'sent') {
+        endpoint = '/api/v1/friends/cancel-request';
+        method = 'DELETE';
+      } else if (friendRequestStatus === 'received') {
+        endpoint = '/api/v1/friends/accept-request';
+        method = 'POST';
+      }
+
+      const response = await fetch(`${SERVER_URL}${endpoint}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: postedBy._id })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFriendRequestStatus(data.status);
+        toast.success(data.message);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to process friend request');
+      }
+    } catch (error) {
+      console.error('Error handling friend request:', error);
+      toast.error('Something went wrong');
+    } finally {
+      setLoadingFriendRequest(false);
+    }
+  };
+
+  // Handle chat navigation
+  const handleChatNavigation = async () => {
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${SERVER_URL}/api/v1/chat/find-or-create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: postedBy._id })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        navigate(`/chat/${data.chatId}`);
+      } else {
+        toast.error('Failed to open chat');
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      toast.error('Failed to open chat');
+    }
+  };
 
   // Handle like/unlike post
   const handleToggleLike = async () => {
@@ -233,6 +344,99 @@ const PostCard = ({
     }
   };
 
+  // Fetch chat contacts
+  const fetchChatContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${SERVER_URL}/api/v1/chat/chats`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setChatContacts(data.chats || []);
+      } else {
+        toast.error('Failed to load contacts');
+      }
+    } catch (error) {
+      console.error('Error fetching chat contacts:', error);
+      toast.error('Failed to load contacts');
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
+  // Handle share to chat
+  const handleShareToChat = async (chatId, otherUserName) => {
+    setSharingToChat(chatId);
+    try {
+      const postUrl = `${window.location.origin}/post/${id}`;
+      const shareMessage = `Check out this post: ${postUrl}`;
+
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${SERVER_URL}/api/v1/chat/chat/${chatId}/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: shareMessage,
+          type: 'text',
+          replyTo: chatId
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`Post shared with ${otherUserName}!`);
+        setShowShareModal(false);
+      } else {
+        toast.error('Failed to share post');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      toast.error('Failed to share post');
+    } finally {
+      setSharingToChat(null);
+    }
+  };
+
+  // Handle share button click
+  const handleShareClick = () => {
+    setShowShareModal(true);
+    fetchChatContacts();
+  };
+
+  // Copy post URL to clipboard
+  const handleCopyLink = async () => {
+    try {
+      const postUrl = `${window.location.origin}/post/${id}`;
+      await navigator.clipboard.writeText(postUrl);
+      toast.success('Post link copied to clipboard!');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      toast.error('Failed to copy link');
+    }
+  };
+
+  // Get friend request button config
+  const getFriendButtonConfig = () => {
+    switch (friendRequestStatus) {
+      case 'sent':
+        return { text: 'Request Sent', disabled: true, color: 'secondary' };
+      case 'received':
+        return { text: 'Accept Request', disabled: false, color: 'primary' };
+      case 'friends':
+        return null; // Show chat icon instead
+      default:
+        return { text: 'Add Friend', disabled: false, color: 'outline' };
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -270,28 +474,57 @@ const PostCard = ({
           {/* Follow Button and Post Options */}
           <div className="flex items-center space-x-2">
             {!isOwner && (
-              <Button
-                variant={isFollowing ? "outline" : "facebook"}
-                size="sm"
-                onClick={handleToggleFollow}
-                disabled={isFollowLoading}
-                className="flex items-center space-x-1"
-              >
-                {isFollowing ? (
-                  <>
-                    <HiUserRemove className="w-4 h-4" />
-                    <span>Following</span>
-                  </>
+              <>
+                {/* Friend Request / Chat Button */}
+                {friendRequestStatus === 'friends' ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleChatNavigation}
+                    className="flex items-center justify-center p-2"
+                    title="Send Message"
+                  >
+                    <HiChat className="w-4 h-4" />
+                  </Button>
                 ) : (
-                  <>
-                    <HiUserAdd className="w-4 h-4" />
-                    <span>Follow</span>
-                  </>
+                  <Button
+                    variant={getFriendButtonConfig()?.color || 'outline'}
+                    size="sm"
+                    onClick={handleFriendRequest}
+                    disabled={loadingFriendRequest || getFriendButtonConfig()?.disabled}
+                    className="flex items-center justify-center p-2"
+                    title={getFriendButtonConfig()?.text || 'Add Friend'}
+                  >
+                    {loadingFriendRequest ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <HiOutlineUserAdd className="w-4 h-4" />
+                    )}
+                  </Button>
                 )}
-              </Button>
-            )}
 
-           
+                {/* Follow Button */}
+                <Button
+                  variant={isFollowing ? "outline" : "facebook"}
+                  size="sm"
+                  onClick={handleToggleFollow}
+                  disabled={isFollowLoading}
+                  className="flex items-center space-x-1"
+                >
+                  {isFollowing ? (
+                    <>
+                      <HiUserRemove className="w-4 h-4" />
+                      <span>Following</span>
+                    </>
+                  ) : (
+                    <>
+                      <HiUserAdd className="w-4 h-4" />
+                      <span>Follow</span>
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -361,6 +594,15 @@ const PostCard = ({
               <HiChat className="w-6 h-6" />
               <span>Comment</span>
             </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleShareClick}
+              className="flex items-center space-x-2 text-gray-600"
+            >
+              <HiShare className="w-6 h-6" />
+              <span>Share</span>
+            </Button>
           </div>
         </div>
 
@@ -405,15 +647,14 @@ const PostCard = ({
               <div className="max-h-96 overflow-y-auto">
                 {localComments.map((comment, index) => (
                   <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-start space-x-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    key={comment._id || index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start space-x-3 p-4"
                   >
-                    <Avatar
-                      src={comment.postedBy?.pic}
-                      name={comment.postedBy?.name}
+                    <Avatar 
+                      src={comment.postedBy?.pic} 
+                      name={comment.postedBy?.name} 
                       size="sm"
                     />
                     <div className="flex-1">
@@ -432,6 +673,83 @@ const PostCard = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999 }}>
+            <div className="bg-white dark:bg-gray-800 rounded-3 p-4 mx-3" style={{ maxWidth: '500px', width: '100%', maxHeight: '80vh' }}>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="mb-0 dark:text-white">Share Post</h5>
+                <button 
+                  type="button"
+                  className="btn btn-link p-0 text-gray-500"
+                  onClick={() => setShowShareModal(false)}
+                >
+                  <HiX size={24} />
+                </button>
+              </div>
+              
+              {/* Copy Link Option */}
+              <div className="border-bottom pb-3 mb-3">
+                <button
+                  onClick={handleCopyLink}
+                  className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center"
+                >
+                  <HiShare className="me-2" />
+                  Copy Post Link
+                </button>
+              </div>
+
+              {/* Chat Contacts */}
+              <div>
+                <h6 className="dark:text-white mb-3">Send to Chat</h6>
+                {loadingContacts ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading contacts...</span>
+                    </div>
+                  </div>
+                ) : chatContacts.length === 0 ? (
+                  <p className="text-center text-gray-500 py-4">No chat contacts available</p>
+                ) : (
+                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {chatContacts.map((chat) => {
+                      const otherUser = chat.participants.find(p => p._id !== state._id);
+                      return (
+                        <div key={chat._id} className="d-flex align-items-center justify-content-between p-2 border-bottom">
+                          <div className="d-flex align-items-center">
+                            <img
+                              src={otherUser?.pic || `https://ui-avatars.com/api/?name=${otherUser?.name}&background=random`}
+                              alt={otherUser?.name}
+                              className="rounded-circle me-3"
+                              width="40"
+                              height="40"
+                            />
+                            <div>
+                              <p className="mb-0 dark:text-white">{otherUser?.name}</p>
+                              <small className="text-gray-500">{otherUser?.email}</small>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleShareToChat(chat._id, otherUser?.name)}
+                            disabled={sharingToChat === chat._id}
+                            className="btn btn-primary btn-sm"
+                          >
+                            {sharingToChat === chat._id ? (
+                              <div className="spinner-border spinner-border-sm" role="status" />
+                            ) : (
+                              'Send'
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </motion.div>
   );

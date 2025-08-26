@@ -294,9 +294,13 @@ const Individualprfle = () => {
             {userProfile.posts && userProfile.posts.length > 0 ? (
               userProfile.posts.map((item, index) => (
                 <Profilecards 
-                  key={index}
+                  key={item._id || index}
+                  postId={item._id}
                   url={item.photo} 
                   body={item.body}
+                  isOwner={false}
+                  onPostUpdate={() => {}}
+                  onPostDelete={() => {}}
                 />
               ))
             ) : (

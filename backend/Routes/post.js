@@ -5,6 +5,7 @@ const Post = mongoose.model('Post')
 const User = mongoose.model('User')
 const Notification = mongoose.model('Notification')
 const login = require('../middleware/login')
+const {authenticate} = require('../middleware/auth/authenticate')
 
 // Create post endpoint
 router.post('/createpost', login, async (req, res) => {
@@ -276,5 +277,78 @@ router.delete('/deletepost/:postId', login, async (req, res) => {
       res.status(500).json({ error: 'Failed to delete post' });
     }
   });
+
+// Get individual post by ID
+router.get('/post/:postId', authenticate, async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const post = await Post.findById(postId)
+      .populate('postedBy', '_id name email pic followers following')
+      .populate({
+        path: 'comments.postedBy',
+        select: '_id name email pic'
+      })
+      .lean();
+
+    if (!post) {
+      return res.status(404).json({
+        error: 'Post not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      post: post
+    });
+  } catch (error) {
+    console.error('Error fetching individual post:', error);
+    res.status(500).json({
+      error: 'Server error while fetching post'
+    });
+  }
+});
+
+// Update post caption
+router.put('/updatepost/:postId', authenticate, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { body } = req.body;
+    const userId = req.user._id;
+
+    // Find the post and check if user owns it
+    const post = await Post.findById(postId);
+    
+    if (!post) {
+      return res.status(404).json({
+        error: 'Post not found'
+      });
+    }
+
+    if (post.postedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        error: 'Unauthorized to update this post'
+      });
+    }
+
+    // Update the post
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      { body: body },
+      { new: true, runValidators: true }
+    ).populate('postedBy', '_id name email pic');
+
+    res.status(200).json({
+      success: true,
+      message: 'Post updated successfully',
+      post: updatedPost
+    });
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({
+      error: 'Server error while updating post'
+    });
+  }
+});
   
 module.exports = router

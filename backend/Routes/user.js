@@ -5,6 +5,7 @@ const Post = mongoose.model('Post');
 const login = require('../middleware/login');
 const User = mongoose.model("User");
 const Notification = require('../models/notification'); 
+const {authenticate} = require('../middleware/auth/authenticate'); // Added for delete account
 
 // Get user profile with posts
 router.get('/user/:id', login, async (req, res) => {
@@ -198,5 +199,67 @@ router.get('/following/:userId', login, (req, res) => {
             res.status(500).json({ error: "Failed to fetch following" })
         })
 })
+
+// Delete account
+router.delete('/delete-account', authenticate, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Delete all posts by the user
+    await Post.deleteMany({ postedBy: userId });
+
+    // Remove user from all followers/following lists
+    await User.updateMany(
+      { $or: [{ followers: userId }, { following: userId }] },
+      { $pull: { followers: userId, following: userId } }
+    );
+
+    // Remove user from friends lists
+    await User.updateMany(
+      { friends: userId },
+      { $pull: { friends: userId } }
+    );
+
+    // Delete all friend requests
+    await mongoose.model('FriendRequest').deleteMany({
+      $or: [{ sender: userId }, { recipient: userId }]
+    });
+
+    // Delete all chat requests
+    await mongoose.model('ChatRequest').deleteMany({
+      $or: [{ sender: userId }, { receiver: userId }]
+    });
+
+    // Delete all chats where user is a participant
+    const chats = await mongoose.model('Chat').find({
+      participants: userId
+    });
+
+    for (let chat of chats) {
+      // Delete all messages in the chat
+      await mongoose.model('Message').deleteMany({ chat: chat._id });
+      // Delete the chat
+      await mongoose.model('Chat').findByIdAndDelete(chat._id);
+    }
+
+    // Delete all notifications related to the user
+    await mongoose.model('Notification').deleteMany({
+      $or: [{ recipient: userId }, { sender: userId }]
+    });
+
+    // Finally, delete the user account
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({
+      error: 'Failed to delete account'
+    });
+  }
+});
 
 module.exports = router

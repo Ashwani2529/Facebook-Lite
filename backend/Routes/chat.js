@@ -141,6 +141,54 @@ router.put('/request/:requestId/respond', authenticate, async (req, res) => {
   }
 });
 
+// Find or create chat between two users
+router.post('/find-or-create', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const currentUserId = req.user._id;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    if (currentUserId.toString() === userId.toString()) {
+      return res.status(400).json({ error: 'Cannot create chat with yourself' });
+    }
+
+    // Check if user exists
+    const otherUser = await User.findById(userId);
+    if (!otherUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Try to find existing chat
+    let chat = await Chat.findOne({
+      participants: { $all: [currentUserId, userId], $size: 2 }
+    }).populate('participants', '_id name email pic');
+
+    if (!chat) {
+      // Create new chat
+      chat = new Chat({
+        participants: [currentUserId, userId]
+      });
+      await chat.save();
+      
+      // Populate participants
+      chat = await Chat.findById(chat._id)
+        .populate('participants', '_id name email pic');
+    }
+
+    res.status(200).json({
+      success: true,
+      chatId: chat._id,
+      chat: chat
+    });
+  } catch (error) {
+    console.error('Error finding/creating chat:', error);
+    res.status(500).json({ error: 'Failed to find or create chat' });
+  }
+});
+
 // Get user's chats
 router.get('/chats', authenticate, async (req, res) => {
   try {
@@ -216,6 +264,7 @@ router.post('/chat/:chatId/message', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const { content, messageType = 'text', replyTo } = req.body;
+    console.log(req.body);
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: "Message content is required" });
