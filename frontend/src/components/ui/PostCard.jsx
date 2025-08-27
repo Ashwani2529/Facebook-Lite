@@ -445,7 +445,7 @@ const PostCard = ({
     >
       <Card className="overflow-hidden">
         {/* Post Header */}
-        <div className="flex items-center justify-between p-6 pb-4">
+        <div className="flex items-center justify-between p-1 pb-2">
           <div className="flex items-center space-x-3">
             <Link 
               to={isOwner ? '/profile' : `/profile/${postedById}`}
@@ -472,7 +472,7 @@ const PostCard = ({
           </div>
 
           {/* Follow Button and Post Options */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             {!isOwner && (
               <>
                 {/* Friend Request / Chat Button */}
@@ -514,12 +514,12 @@ const PostCard = ({
                   {isFollowing ? (
                     <>
                       <HiUserRemove className="w-4 h-4" />
-                      <span>Following</span>
+                      <span className='text-sm'>Following</span>
                     </>
                   ) : (
                     <>
                       <HiUserAdd className="w-4 h-4" />
-                      <span>Follow</span>
+                      <span className='text-sm'>Follow</span>
                     </>
                   )}
                 </Button>
@@ -529,7 +529,7 @@ const PostCard = ({
         </div>
 
         {/* Post Content */}
-        <div className="px-6 pb-4">
+        <div className="px-4 pb-2">
           {body && (
                           <p className="text-gray-900 text-lg leading-relaxed whitespace-pre-wrap">
                 {body}
@@ -553,7 +553,7 @@ const PostCard = ({
         )}
 
         {/* Post Stats */}
-        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between text-sm text-gray-500">
                                 <span className="cursor-pointer">
               {localLikesCount} {localLikesCount === 1 ? 'like' : 'likes'}
@@ -568,10 +568,10 @@ const PostCard = ({
         </div>
 
         {/* Post Actions */}
-        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-around">
+        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-evenly">
             <Button
-              variant="ghost"
+              variant="ghost2"
               onClick={handleToggleLike}
               disabled={isLiking}
               className={`flex items-center space-x-2 ${
@@ -579,29 +579,29 @@ const PostCard = ({
               }`}
             >
               {localIsLiked ? (
-                <HiHeart className="w-6 h-6" />
+                <HiHeart className="w-6 h-6 text-red-500" />
               ) : (
                 <HiOutlineHeart className="w-6 h-6" />
               )}
-              <span>Like</span>
+              <span className='hidden md:inline'>Like</span>
             </Button>
 
             <Button
-              variant="ghost"
+              variant="ghost2"
               onClick={() => setShowComments(!showComments)}
               className="flex items-center space-x-2 text-gray-600"
             >
               <HiChat className="w-6 h-6" />
-              <span>Comment</span>
+              <span className='hidden md:inline'>Comment</span>
             </Button>
 
             <Button
-              variant="ghost"
+              variant="ghost2"
               onClick={handleShareClick}
               className="flex items-center space-x-2 text-gray-600"
             >
               <HiShare className="w-6 h-6" />
-              <span>Share</span>
+              <span className='hidden md:inline'>Share</span>
             </Button>
           </div>
         </div>
@@ -626,7 +626,7 @@ const PostCard = ({
                         onChange={(e) => setCommentText(e.target.value)}
                         onKeyDown={handleCommentKeyPress}
                         placeholder="Comment"
-                        className="flex-1 resize-none rounded-2xl bg-gray-100 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white border-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="flex-1 resize-none rounded-2xl bg-gray-100 dark:bg-gray-800 px-4 py-2 text-sm text-gray-900 dark:text-white border-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                         rows="1"
                       />
                       <Button

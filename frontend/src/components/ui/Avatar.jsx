@@ -18,7 +18,7 @@ const Avatar = ({
     xs: 'w-8 h-8 text-xs',
     sm: 'w-10 h-10 text-sm',
     md: 'w-12 h-12 text-base',
-    lg: 'w-16 h-16 text-lg',
+    lg: 'w-12 h-12 text-lg',
     xl: 'w-20 h-20 text-xl',
     '2xl': 'w-24 h-24 text-2xl'
   };
