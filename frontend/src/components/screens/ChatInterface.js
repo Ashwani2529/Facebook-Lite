@@ -621,7 +621,7 @@ const ChatInterface = () => {
             
             {/* Emoji Picker */}
             {showEmojiPicker && (
-              <div className="position-absolute" style={{ bottom: '60px', right: '10px', zIndex: 1000 }}>
+              <div className="position-absolute" style={{ bottom: '60px', right: '-6px', zIndex: 1000 }}>
                 <EmojiPicker 
                   onEmojiClick={onEmojiClick}
                   width={300}

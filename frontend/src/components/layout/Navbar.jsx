@@ -270,13 +270,12 @@ const Navbar = () => {
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 )}
               </Button>
-
               {/* Notifications Dropdown */}
               {isNotificationOpen && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 mt-2 w-80 bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-500 dark:border-gray-700 py-2"
+                  className="absolute right-[-75px] mt-2 w-80 bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-500 dark:border-gray-700 py-2"
                   style={{ maxHeight: '400px' }}
                 >
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-400 flex justify-between items-center">
@@ -363,7 +362,8 @@ const Navbar = () => {
                   )}
                 </motion.div>
               )}
-            </div>
+              </div>
+
 
             {/* User Menu */}
             <div className="relative user-menu-container">

@@ -10,7 +10,8 @@ import {
   HiUserRemove,
   HiShare,
   HiX,
-  HiOutlineUserAdd 
+  HiOutlineUserAdd,
+  HiDotsVertical
 } from 'react-icons/hi';
 
 import { formatDistanceToNow } from 'date-fns';
@@ -62,6 +63,9 @@ const PostCard = ({
   // Friend request states
   const [friendRequestStatus, setFriendRequestStatus] = useState('none'); // none, sent, received, friends
   const [loadingFriendRequest, setLoadingFriendRequest] = useState(false);
+
+  // Three dots menu state
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   const isOwner = postedById === state?._id;
 
@@ -130,6 +134,7 @@ const PostCard = ({
       let endpoint, method;
 
       if (friendRequestStatus === 'none') {
+        
         endpoint = '/api/v1/friends/send-request';
         method = 'POST';
       } else if (friendRequestStatus === 'sent') {
@@ -471,61 +476,94 @@ const PostCard = ({
             </div>
           </div>
 
-          {/* Follow Button and Post Options */}
-          <div className="flex items-center space-x-1">
-            {!isOwner && (
-              <>
-                {/* Friend Request / Chat Button */}
-                {friendRequestStatus === 'friends' ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleChatNavigation}
-                    className="flex items-center justify-center p-2"
-                    title="Send Message"
-                  >
-                    <HiChat className="w-4 h-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant={getFriendButtonConfig()?.color || 'outline'}
-                    size="sm"
-                    onClick={handleFriendRequest}
-                    disabled={loadingFriendRequest || getFriendButtonConfig()?.disabled}
-                    className="flex items-center justify-center p-2"
-                    title={getFriendButtonConfig()?.text || 'Add Friend'}
-                  >
-                    {loadingFriendRequest ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <HiOutlineUserAdd className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
+          {/* Three Dots Menu */}
+          {!isOwner && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                className="flex items-center justify-center p-2"
+                title="More options"
+              >
+                <HiDotsVertical className="w-5 h-5" />
+              </Button>
 
-                {/* Follow Button */}
-                <Button
-                  variant={isFollowing ? "outline" : "facebook"}
-                  size="sm"
-                  onClick={handleToggleFollow}
-                  disabled={isFollowLoading}
-                  className="flex items-center space-x-1"
-                >
-                  {isFollowing ? (
-                    <>
-                      <HiUserRemove className="w-4 h-4" />
-                      <span className='text-sm'>Following</span>
-                    </>
-                  ) : (
-                    <>
-                      <HiUserAdd className="w-4 h-4" />
-                      <span className='text-sm'>Follow</span>
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-          </div>
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+                {showOptionsMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+                  >
+                    <div className="py-2">
+                      {/* Friend Request / Chat Button */}
+                      {friendRequestStatus === 'friends' ? (
+                        <button
+                          onClick={() => {
+                            handleChatNavigation();
+                            setShowOptionsMenu(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <HiChat className="w-4 h-4 mr-3" />
+                          Send Message
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            handleFriendRequest();
+                            setShowOptionsMenu(false);
+                          }}
+                          disabled={loadingFriendRequest || getFriendButtonConfig()?.disabled}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingFriendRequest ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-3" />
+                          ) : (
+                            <HiOutlineUserAdd className="w-4 h-4 mr-3" />
+                          )}
+                          {getFriendButtonConfig()?.text || 'Add Friend'}
+                        </button>
+                      )}
+
+                      {/* Follow Button */}
+                      <button
+                        onClick={() => {
+                          handleToggleFollow();
+                          setShowOptionsMenu(false);
+                        }}
+                        disabled={isFollowLoading}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isFollowing ? (
+                          <>
+                            <HiUserRemove className="w-4 h-4 mr-3" />
+                            Unfollow
+                          </>
+                        ) : (
+                          <>
+                            <HiUserAdd className="w-4 h-4 mr-3" />
+                            Follow
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Overlay to close menu when clicking outside */}
+              {showOptionsMenu && (
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowOptionsMenu(false)}
+                />
+              )}
+            </div>
+          )}
         </div>
 
         {/* Post Content */}

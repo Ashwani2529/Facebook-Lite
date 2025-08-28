@@ -5,6 +5,7 @@ import { UserContext } from '../../App';
 import Profilecards from './Profilecards';
 import { generateAvatarPlaceholder } from '../../utils/avatarUtils';
 import { HiChat, HiUserAdd, HiUserRemove } from 'react-icons/hi';
+import toast from 'react-hot-toast';
 import SERVER_URL from '../../server_url';
 
 const Individualprfle = () => {
@@ -13,8 +14,8 @@ const Individualprfle = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
-  const [chatRequestStatus, setChatRequestStatus] = useState(null);
-  const [isChatRequestLoading, setIsChatRequestLoading] = useState(false);
+  const [friendRequestStatus, setFriendRequestStatus] = useState('none');
+  const [isFriendRequestLoading, setIsFriendRequestLoading] = useState(false);
   const { state, dispatch } = useContext(UserContext);
 
   // Fetch user profile data and chat request status
@@ -36,17 +37,17 @@ const Individualprfle = () => {
         })
         .catch(err => console.error('Profile fetch error:', err));
 
-      // Check chat request status
-      fetch(`${SERVER_URL}/api/v1/chat/request-status/${userid}`, {
+      // Check friend request status
+      fetch(`${SERVER_URL}/api/v1/friends/status/${userid}`, {
         headers: {
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         }
       })
         .then(res => res.json())
         .then(result => {
-          setChatRequestStatus(result);
+          setFriendRequestStatus(result.status);
         })
-        .catch(err => console.error('Chat request status error:', err));
+        .catch(err => console.error('Friend request status error:', err));
     }
   }, [userid, state]);
 
@@ -108,67 +109,87 @@ const Individualprfle = () => {
     }
   };
 
-  // Handle chat request
-  const handleChatRequest = async () => {
-    if (isChatRequestLoading) return;
+  // Handle friend request
+  const handleFriendRequest = async () => {
+    if (isFriendRequestLoading) return;
     
-    setIsChatRequestLoading(true);
+    setIsFriendRequestLoading(true);
     
     try {
-      const response = await fetch(`${SERVER_URL}/api/v1/chat/request`, {
+      let endpoint, method;
+      
+      if (friendRequestStatus === 'none') {
+        endpoint = '/api/v1/friends/send-request';
+        method = 'POST';
+      } else if (friendRequestStatus === 'sent') {
+        endpoint = '/api/v1/friends/cancel-request';
+        method = 'DELETE';
+      } else if (friendRequestStatus === 'received') {
+        endpoint = '/api/v1/friends/accept-request';
+        method = 'POST';
+      }
+
+      const response = await fetch(`${SERVER_URL}${endpoint}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('jwt')
+        },
+        body: JSON.stringify({ userId: userid })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setFriendRequestStatus(data.status);
+        toast.success(data.message);
+      } else {
+        toast.error(data.error || 'Failed to process friend request');
+      }
+    } catch (error) {
+      console.error('Friend request error:', error);
+      toast.error('Failed to process friend request');
+    } finally {
+      setIsFriendRequestLoading(false);
+    }
+  };
+
+  // Get friend request button text and variant
+  const getFriendButtonConfig = () => {
+    switch (friendRequestStatus) {
+      case 'sent':
+        return { text: 'Cancel Request', variant: 'outline', icon: HiUserRemove, disabled: false };
+      case 'received':
+        return { text: 'Accept Request', variant: 'success', icon: HiUserAdd, disabled: false };
+      case 'friends':
+        return { text: 'Send Message', variant: 'primary', icon: HiChat, disabled: false };
+      default:
+        return { text: 'Add Friend', variant: 'outline', icon: HiUserAdd, disabled: false };
+    }
+  };
+
+  // Handle chat navigation when users are friends
+  const handleChatNavigation = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/v1/chat/find-or-create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         },
-        body: JSON.stringify({ 
-          receiverId: userid,
-          message: `Hi ${userProfile?.user?.name || 'there'}! I'd like to chat with you.`
-        })
+        body: JSON.stringify({ userId: userid })
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        setChatRequestStatus({
-          status: 'pending',
-          isSender: true
-        });
-        alert('Chat request sent successfully!');
+      if (response.ok) {
+        const data = await response.json();
+        navigate(`/chat/${data.chatId}`);
       } else {
-        alert(data.error || 'Failed to send chat request');
+        toast.error('Failed to open chat');
       }
     } catch (error) {
-      console.error('Chat request error:', error);
-      alert('Failed to send chat request');
-    } finally {
-      setIsChatRequestLoading(false);
+      console.error('Error opening chat:', error);
+      toast.error('Failed to open chat');
     }
-  };
-
-  // Get chat request button text and variant
-  const getChatButtonConfig = () => {
-    if (!chatRequestStatus || chatRequestStatus.status === null) {
-      return { text: 'Send Request', variant: 'success', icon: HiChat, disabled: false };
-    }
-    
-    const { status, isSender } = chatRequestStatus;
-    
-    if (status === 'pending') {
-      return isSender 
-        ? { text: 'Request Sent', variant: 'outline', icon: HiChat, disabled: true }
-        : { text: 'Request Received', variant: 'warning', icon: HiChat, disabled: true };
-    }
-    
-    if (status === 'accepted') {
-      return { text: 'Open Chat', variant: 'primary', icon: HiChat, disabled: false };
-    }
-    
-    if (status === 'declined') {
-      return { text: 'Request Declined', variant: 'outline', icon: HiChat, disabled: true };
-    }
-    
-    return { text: 'Send Request', variant: 'success', icon: HiChat, disabled: false };
   };
 
   return (
@@ -178,7 +199,7 @@ const Individualprfle = () => {
         <div className='container-fluid bg-gray-50 dark:bg-facebook-dark min-h-screen py-4'>
           <div className='row'>
             {/* Profile Picture */}
-            <div className='col-md-4 picture text-center'>
+            <div className='flex items-center justify-center col-md-4 picture text-center'>
               <img 
                 height='300px' 
                 width='300px' 
@@ -187,7 +208,7 @@ const Individualprfle = () => {
                   : generateAvatarPlaceholder(userProfile.user.name || 'User', 300)
                 } 
                 alt='Profile Picture'
-                style={{ borderRadius: '15px', objectFit: 'cover' }}
+                style={{ borderRadius: '15px', objectFit: 'fill',height:'300px',width:'300px' }}
                 onError={(e) => {
                   e.target.src = generateAvatarPlaceholder(userProfile.user.name || 'User', 300);
                 }}
@@ -221,43 +242,22 @@ const Individualprfle = () => {
                   
                   <button
                     onClick={async () => {
-                      const config = getChatButtonConfig();
-                      if (config.text === 'Open Chat') {
-                        // Find existing chat with this user
-                        try {
-                          const response = await fetch(`${SERVER_URL}/api/v1/chat/chats`, {
-                            headers: {
-                              'Authorization': 'Bearer ' + localStorage.getItem('jwt')
-                            }
-                          });
-                          const data = await response.json();
-                          if (data.success) {
-                            const existingChat = data.chats.find(chat => 
-                              chat.participants.some(p => p._id === userid)
-                            );
-                            if (existingChat) {
-                              navigate(`/chat/${existingChat._id}`);
-                            } else {
-                              alert('Chat not found. Please try again.');
-                            }
-                          }
-                        } catch (error) {
-                          console.error('Find chat error:', error);
-                          alert('Failed to open chat');
-                        }
-                      } else if (!config.disabled && config.text === 'Send Request') {
-                        handleChatRequest();
+                      const config = getFriendButtonConfig();
+                      if (config.text === 'Send Message') {
+                        handleChatNavigation();
+                      } else {
+                        handleFriendRequest();
                       }
                     }}
-                    disabled={isChatRequestLoading || getChatButtonConfig().disabled}
-                    className={`btn btn-${getChatButtonConfig().variant} px-2 py-2 d-flex align-items-center`}
+                    disabled={isFriendRequestLoading || getFriendButtonConfig().disabled}
+                    className={`btn btn-${getFriendButtonConfig().variant} px-2 py-2 d-flex align-items-center`}
                   >
-                    {isChatRequestLoading ? (
+                    {isFriendRequestLoading ? (
                       <span>Loading...</span>
                     ) : (
                       <>
-                        {React.createElement(getChatButtonConfig().icon, { className: "me-2", size: 16 })}
-                        <span>{getChatButtonConfig().text}</span>
+                        {React.createElement(getFriendButtonConfig().icon, { className: "me-2", size: 16 })}
+                        <span>{getFriendButtonConfig().text}</span>
                       </>
                     )}
                   </button>
