@@ -6,14 +6,18 @@ const { Chat, Message } = require('../models/chat');
 const User = require('../models/user');
 const Notification = require('../models/notification');
 
-// Send chat request
+// Send request (friend or chat)
 router.post('/request', authenticate, async (req, res) => {
   try {
-    const { receiverId, message } = req.body;
+    const { receiverId, message, type = 'friend' } = req.body;
     const senderId = req.user._id;
 
+    if (!['friend', 'chat'].includes(type)) {
+      return res.status(400).json({ error: "Invalid request type. Use 'friend' or 'chat'" });
+    }
+
     if (senderId.toString() === receiverId) {
-      return res.status(400).json({ error: "You cannot send a chat request to yourself" });
+      return res.status(400).json({ error: `You cannot send a ${type} request to yourself` });
     }
 
     // Check if receiver exists
@@ -23,46 +27,49 @@ router.post('/request', authenticate, async (req, res) => {
     }
 
     // Check for existing request
-    const existingRequest = await ChatRequest.findExistingRequest(senderId, receiverId);
+    const existingRequest = await ChatRequest.findExistingRequest(senderId, receiverId, type);
     if (existingRequest) {
       return res.status(400).json({ 
-        error: "Chat request already exists", 
+        error: `${type.charAt(0).toUpperCase() + type.slice(1)} request already exists`, 
         status: existingRequest.status 
       });
     }
 
-    const chatRequest = new ChatRequest({
+    const request = new ChatRequest({
       sender: senderId,
       receiver: receiverId,
+      type: type,
       message: message || ''
     });
 
-    await chatRequest.save();
-    await chatRequest.populate('sender', 'name pic email');
-    await chatRequest.populate('receiver', 'name pic email');
+    await request.save();
+    await request.populate('sender', 'name pic email');
+    await request.populate('receiver', 'name pic email');
 
     // Create notification for the receiver
     await Notification.createNotification({
       recipient: receiverId,
       sender: senderId,
-      type: 'chat_request',
-      message: `${req.user.name} sent you a chat request`,
-      relatedChatRequest: chatRequest._id
+      type: type === 'friend' ? 'friend_request' : 'chat_request',
+      message: `${req.user.name} sent you a ${type} request`,
+      relatedChatRequest: request._id
     });
 
     res.json({ 
       success: true, 
-      message: "Chat request sent successfully",
-      chatRequest 
+      message: `${type.charAt(0).toUpperCase() + type.slice(1)} request sent successfully`,
+      status: 'sent',
+      request 
     });
   } catch (error) {
-    console.error('Send chat request error:', error);
-    res.status(500).json({ error: "Failed to send chat request" });
+    console.error('Send request error:', error);
+    res.status(500).json({ error: `Failed to send ${req.body.type || 'friend'} request` });
   }
 });
 
 // Get received chat requests
 router.get('/requests/received', authenticate, async (req, res) => {
+  console.log(req.user,"66");
   try {
     const requests = await ChatRequest.find({ 
       receiver: req.user._id,
@@ -70,6 +77,7 @@ router.get('/requests/received', authenticate, async (req, res) => {
     })
     .populate('sender', 'name pic email')
     .sort({ createdAt: -1 });
+    console.log(requests,"32");
 
     res.json({ success: true, requests });
   } catch (error) {
@@ -316,12 +324,13 @@ router.post('/chat/:chatId/message', authenticate, async (req, res) => {
   }
 });
 
-// Check chat request status
+// Check request status (friend or chat)
 router.get('/request-status/:userId', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+    const { type = 'friend' } = req.query;
     
-    const existingRequest = await ChatRequest.findExistingRequest(req.user._id, userId);
+    const existingRequest = await ChatRequest.findExistingRequest(req.user._id, userId, type);
     
     if (!existingRequest) {
       return res.json({ status: null });
@@ -335,6 +344,243 @@ router.get('/request-status/:userId', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Check request status error:', error);
     res.status(500).json({ error: "Failed to check request status" });
+  }
+});
+
+// === FRIEND REQUEST ENDPOINTS ===
+
+// Send friend request (alias for backward compatibility)
+router.post('/send-request', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const senderId = req.user._id;
+
+    if (senderId.toString() === userId.toString()) {
+      return res.status(400).json({ error: 'Cannot send friend request to yourself' });
+    }
+
+    // Check if recipient exists
+    const recipient = await User.findById(userId);
+    if (!recipient) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if already friends
+    const currentUser = await User.findById(senderId);
+    if (currentUser.friends && currentUser.friends.includes(userId)) {
+      return res.status(400).json({ error: 'You are already friends with this user' });
+    }
+
+    // Check if request already exists
+    const existingRequest = await ChatRequest.findExistingRequest(senderId, userId, 'friend');
+    if (existingRequest) {
+      return res.status(400).json({ error: 'Friend request already exists' });
+    }
+
+    // Create friend request
+    const friendRequest = new ChatRequest({
+      sender: senderId,
+      receiver: userId,
+      type: 'friend'
+    });
+
+    await friendRequest.save();
+
+    // Create notification for recipient
+    await Notification.createNotification({
+      recipient: userId,
+      sender: senderId,
+      type: 'friend_request',
+      message: `${req.user.name} sent you a friend request`,
+      relatedChatRequest: friendRequest._id
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Friend request sent successfully',
+      status: 'sent'
+    });
+  } catch (error) {
+    console.error('Error sending friend request:', error);
+    res.status(500).json({ error: 'Failed to send friend request' });
+  }
+});
+
+// Accept friend request
+router.post('/accept-request', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const currentUserId = req.user._id;
+    console.log(userId,"32",currentUserId);
+    const friendRequest = await ChatRequest.findOne({
+      sender: userId,
+      receiver: currentUserId,
+      type: 'friend',
+      status: 'pending'
+    });
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    // Update friend request status
+    friendRequest.status = 'accepted';
+    friendRequest.respondedAt = new Date();
+    await friendRequest.save();
+
+    // Add each user to other's friends list
+    await User.findByIdAndUpdate(currentUserId, {
+      $addToSet: { friends: userId }
+    });
+
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { friends: currentUserId }
+    });
+
+    // Create notification for sender
+    await Notification.createNotification({
+      recipient: userId,
+      sender: currentUserId,
+      type: 'friend_accept',
+      message: `${req.user.name} accepted your friend request`,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Friend request accepted',
+      status: 'friends'
+    });
+  } catch (error) {
+    console.error('Error accepting friend request:', error);
+    res.status(500).json({ error: 'Failed to accept friend request' });
+  }
+});
+
+// Decline friend request
+router.post('/decline-request', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const currentUserId = req.user._id;
+
+    const friendRequest = await ChatRequest.findOne({
+      sender: userId,
+      receiver: currentUserId,
+      type: 'friend',
+      status: 'pending'
+    });
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    friendRequest.status = 'declined';
+    friendRequest.respondedAt = new Date();
+    await friendRequest.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Friend request declined',
+      status: 'none'
+    });
+  } catch (error) {
+    console.error('Error declining friend request:', error);
+    res.status(500).json({ error: 'Failed to decline friend request' });
+  }
+});
+
+// Cancel friend request
+router.delete('/cancel-request', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const senderId = req.user._id;
+
+    const friendRequest = await ChatRequest.findOneAndDelete({
+      sender: senderId,
+      receiver: userId,
+      type: 'friend',
+      status: 'pending'
+    });
+
+    if (!friendRequest) {
+      return res.status(404).json({ error: 'Friend request not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Friend request cancelled',
+      status: 'none'
+    });
+  } catch (error) {
+    console.error('Error cancelling friend request:', error);
+    res.status(500).json({ error: 'Failed to cancel friend request' });
+  }
+});
+
+// Check friend request status
+router.get('/status/:userId', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    // Check if already friends
+    const currentUser = await User.findById(currentUserId);
+    if (currentUser.friends && currentUser.friends.includes(userId)) {
+      return res.status(200).json({ status: 'friends' });
+    }
+
+    // Check for pending request
+    const sentRequest = await ChatRequest.findOne({
+      sender: currentUserId,
+      receiver: userId,
+      type: 'friend',
+      status: 'pending'
+    });
+
+    if (sentRequest) {
+      return res.status(200).json({ status: 'sent' });
+    }
+
+    const receivedRequest = await ChatRequest.findOne({
+      sender: userId,
+      receiver: currentUserId,
+      type: 'friend',
+      status: 'pending'
+    });
+
+    if (receivedRequest) {
+      return res.status(200).json({ status: 'received' });
+    }
+
+    res.status(200).json({ status: 'none' });
+  } catch (error) {
+    console.error('Error checking friend status:', error);
+    res.status(500).json({ error: 'Failed to check friend status' });
+  }
+});
+
+// Remove friend
+router.delete('/remove-friend', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const currentUserId = req.user._id;
+
+    // Remove from both users' friends lists
+    await User.findByIdAndUpdate(currentUserId, {
+      $pull: { friends: userId }
+    });
+
+    await User.findByIdAndUpdate(userId, {
+      $pull: { friends: currentUserId }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Friend removed successfully',
+      status: 'none'
+    });
+  } catch (error) {
+    console.error('Error removing friend:', error);
+    res.status(500).json({ error: 'Failed to remove friend' });
   }
 });
 

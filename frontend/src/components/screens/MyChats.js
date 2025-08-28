@@ -176,7 +176,7 @@ const MyChats = () => {
                         <div
                           key={chat._id}
                           onClick={() => openChat(chat._id)}
-                          className={`d-flex align-items-center p-4 border-bottom hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
+                          className={`d-flex align-items-center p-4 border-bottom hover:bg-gray-700 cursor-pointer ${
                             index === chats.length - 1 ? 'border-0' : ''
                           }`}
                           style={{ cursor: 'pointer' }}

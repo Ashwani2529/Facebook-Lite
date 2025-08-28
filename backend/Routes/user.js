@@ -220,12 +220,7 @@ router.delete('/delete-account', authenticate, async (req, res) => {
       { $pull: { friends: userId } }
     );
 
-    // Delete all friend requests
-    await mongoose.model('FriendRequest').deleteMany({
-      $or: [{ sender: userId }, { recipient: userId }]
-    });
-
-    // Delete all chat requests
+    // Delete all requests (friend and chat)
     await mongoose.model('ChatRequest').deleteMany({
       $or: [{ sender: userId }, { receiver: userId }]
     });

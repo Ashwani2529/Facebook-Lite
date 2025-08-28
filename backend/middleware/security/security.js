@@ -256,8 +256,6 @@ const validateUserAgent = (req, res, next) => {
  * Combined security middleware stack (simplified)
  */
 const applySecurity = (app) => {
-  // Basic security headers
-  app.use(helmetConfig);
   
   // CORS configuration
   app.use(cors(corsOptions));

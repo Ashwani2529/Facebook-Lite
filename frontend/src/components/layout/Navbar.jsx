@@ -189,21 +189,21 @@ const Navbar = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full mt-2 w-full bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50"
+                className="absolute top-full mt-2 w-auto bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50"
               >
                 {searchResults.map((user) => (
                   <Link
                     key={user._id}
                     to={`/profile/${user._id}`}
                     onClick={() => setShowSearchResults(false)}
-                    className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-200 transition-colors"
                   >
                     <Avatar src={user.pic} name={user.name} size="sm" />
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-gray-900 dark:text-black">
                         {user.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-300">
+                      <p className="text-xs text-gray-500 dark:text-gray-800">
                         {user.email}
                       </p>
                     </div>
@@ -485,7 +485,7 @@ const Navbar = () => {
               
               {/* Mobile Search Results */}
               {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute top-full mt-2 w-full bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <div className="absolute top-full mt-2 w-auto bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50">
                   {searchResults.map((user) => (
                     <Link
                       key={user._id}
@@ -494,12 +494,12 @@ const Navbar = () => {
                         setShowSearchResults(false);
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-200"
                     >
                       <Avatar src={user.pic} name={user.name} size="sm" />
                       <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-300">{user.email}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-black">{user.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-800">{user.email}</p>
                       </div>
                     </Link>
                   ))}

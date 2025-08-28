@@ -11,6 +11,11 @@ const chatRequestSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  type: {
+    type: String,
+    enum: ['friend', 'chat'],
+    default: 'friend'
+  },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'declined'],
@@ -19,7 +24,7 @@ const chatRequestSchema = new mongoose.Schema({
   message: {
     type: String,
     trim: true,
-    maxlength: [200, 'Chat request message cannot exceed 200 characters']
+    maxlength: [200, 'Request message cannot exceed 200 characters']
   },
   createdAt: {
     type: Date,
@@ -32,17 +37,17 @@ const chatRequestSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for efficient queries
-chatRequestSchema.index({ sender: 1, receiver: 1 }, { unique: true });
+// Compound index to prevent duplicate requests (considering type)
+chatRequestSchema.index({ sender: 1, receiver: 1, type: 1 }, { unique: true });
 chatRequestSchema.index({ receiver: 1, status: 1 });
 chatRequestSchema.index({ sender: 1, status: 1 });
 
-// Prevent duplicate chat requests between same users
-chatRequestSchema.statics.findExistingRequest = function(senderId, receiverId) {
+// Prevent duplicate requests between same users for same type
+chatRequestSchema.statics.findExistingRequest = function(senderId, receiverId, type = 'friend') {
   return this.findOne({
     $or: [
-      { sender: senderId, receiver: receiverId },
-      { sender: receiverId, receiver: senderId }
+      { sender: senderId, receiver: receiverId, type: type },
+      { sender: receiverId, receiver: senderId, type: type }
     ]
   });
 };

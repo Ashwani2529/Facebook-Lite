@@ -38,7 +38,7 @@ const Individualprfle = () => {
         .catch(err => console.error('Profile fetch error:', err));
 
       // Check friend request status
-      fetch(`${SERVER_URL}/api/v1/friends/status/${userid}`, {
+      fetch(`${SERVER_URL}/api/v1/chat/status/${userid}`, {
         headers: {
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         }
@@ -119,13 +119,13 @@ const Individualprfle = () => {
       let endpoint, method;
       
       if (friendRequestStatus === 'none') {
-        endpoint = '/api/v1/friends/send-request';
+        endpoint = '/api/v1/chat/send-request';
         method = 'POST';
       } else if (friendRequestStatus === 'sent') {
-        endpoint = '/api/v1/friends/cancel-request';
+        endpoint = '/api/v1/chat/cancel-request';
         method = 'DELETE';
       } else if (friendRequestStatus === 'received') {
-        endpoint = '/api/v1/friends/accept-request';
+        endpoint = '/api/v1/chat/accept-request';
         method = 'POST';
       }
 
@@ -139,7 +139,7 @@ const Individualprfle = () => {
       });
 
       const data = await response.json();
-      
+      console.log(data,"32",userid); 
       if (response.ok) {
         setFriendRequestStatus(data.status);
         toast.success(data.message);
@@ -158,13 +158,13 @@ const Individualprfle = () => {
   const getFriendButtonConfig = () => {
     switch (friendRequestStatus) {
       case 'sent':
-        return { text: 'Cancel Request', variant: 'outline', icon: HiUserRemove, disabled: false };
+        return { text: 'Cancel Request', variant: 'info', icon: HiUserRemove, disabled: false };
       case 'received':
         return { text: 'Accept Request', variant: 'success', icon: HiUserAdd, disabled: false };
       case 'friends':
         return { text: 'Send Message', variant: 'primary', icon: HiChat, disabled: false };
       default:
-        return { text: 'Add Friend', variant: 'outline', icon: HiUserAdd, disabled: false };
+        return { text: 'Add Friend', variant: 'i', icon: HiUserAdd, disabled: false };
     }
   };
 
@@ -250,7 +250,7 @@ const Individualprfle = () => {
                       }
                     }}
                     disabled={isFriendRequestLoading || getFriendButtonConfig().disabled}
-                    className={`btn btn-${getFriendButtonConfig().variant} px-2 py-2 d-flex align-items-center`}
+                    className={`dark:text-white dark:hover:text-white btn btn-${getFriendButtonConfig().variant} px-2 py-2 d-flex align-items-center`}
                   >
                     {isFriendRequestLoading ? (
                       <span>Loading...</span>

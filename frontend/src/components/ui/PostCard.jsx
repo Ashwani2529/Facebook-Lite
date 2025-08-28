@@ -108,7 +108,7 @@ const PostCard = ({
   const checkFriendRequestStatus = async () => {
     try {
       const token = localStorage.getItem('jwt');
-      const response = await fetch(`${SERVER_URL}/api/v1/friends/status/${postedBy._id}`, {
+      const response = await fetch(`${SERVER_URL}/api/v1/chat/status/${postedBy._id}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -135,13 +135,13 @@ const PostCard = ({
 
       if (friendRequestStatus === 'none') {
         
-        endpoint = '/api/v1/friends/send-request';
+        endpoint = '/api/v1/chat/send-request';
         method = 'POST';
       } else if (friendRequestStatus === 'sent') {
-        endpoint = '/api/v1/friends/cancel-request';
+        endpoint = '/api/v1/chat/cancel-request';
         method = 'DELETE';
       } else if (friendRequestStatus === 'received') {
-        endpoint = '/api/v1/friends/accept-request';
+        endpoint = '/api/v1/chat/accept-request';
         method = 'POST';
       }
 

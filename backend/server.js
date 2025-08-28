@@ -24,7 +24,7 @@ require('./models/post');
 require('./models/chatRequest');
 require('./models/chat');
 require('./models/notification');
-require('./models/friendRequest');
+
 
 // Import routes
 const authRoutes = require('./Routes/auth');
@@ -32,7 +32,6 @@ const postRoutes = require('./Routes/post');
 const userRoutes = require('./Routes/user');
 const chatRoutes = require('./Routes/chat');
 const notificationRoutes = require('./Routes/notifications');
-const friendsRoutes = require('./Routes/friends');
 
 /**
  * Express Application Setup
@@ -236,7 +235,6 @@ class FacebookLiteServer {
     apiRouter.use('/users', userRoutes);
     apiRouter.use('/chat', chatRoutes);
     apiRouter.use('/notifications', notificationRoutes);
-    apiRouter.use('/friends', friendsRoutes);
 
     // Mount API router
     this.app.use(config.api.prefix, apiRouter);
