@@ -37,6 +37,8 @@ const Settings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
 
   useEffect(() => {
     if (state) {
@@ -131,11 +133,11 @@ const Settings = () => {
       if (profileImage) {
         const imageData = new FormData();
         imageData.append('file', profileImage);
-        imageData.append('cloud_name', 'dtrsgpw04');
-        imageData.append('upload_preset', 'Cloudy'); // You'll need to set this up in Cloudinary
+        imageData.append('cloud_name', cloudName);
+        imageData.append('upload_preset', uploadPreset);
         
         try {
-          const uploadResponse = await fetch('https://api.cloudinary.com/v1_1/dtrsgpw04/image/upload', {
+          const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
             method: 'POST',
             body: imageData
           });

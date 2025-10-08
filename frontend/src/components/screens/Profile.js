@@ -73,8 +73,8 @@ const Profile = () => {
       console.log(img.compressedBlob)
       const data = new FormData()
       data.append("file", img.compressedBlob)
-      const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || "dtrsgpw04";
-      const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || "Cloudy";
+      const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
 
       data.append("upload_preset", uploadPreset);
       data.append("cloud_name", cloudName);

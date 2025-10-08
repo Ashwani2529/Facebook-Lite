@@ -11,15 +11,12 @@ import SERVER_URL from '../../server_url';
 
 
 const Card = (props) => {
-
   const [liketoggle, setLikeToggle] = useState(props.isLiked);
-
   const [commText, setCommText] = useState('');
 // eslint-disable-next-line
   const { state, dispatch } = useContext(UserContext);
 
   const deletePost = (postid) => {
-    console.log("hi")
     fetch(`${SERVER_URL}/api/v1/posts/deletepost/${postid}`, {
       method: "delete",
       headers: {

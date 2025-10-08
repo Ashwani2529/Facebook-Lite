@@ -137,7 +137,7 @@ const config = {
 
   // Default Values
   defaults: {
-    userProfilePicture: 'https://res.cloudinary.com/dtrsgpw04/image/upload/v1619875125/default-profile_xnpgiq.png',
+    userProfilePicture: `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/v1619875125/default-profile_xnpgiq.png`,
     postImagePlaceholder: 'https://via.placeholder.com/400x300?text=No+Image'
   }
 };
