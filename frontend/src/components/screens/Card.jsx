@@ -19,6 +19,7 @@ const Card = (props) => {
   const { state, dispatch } = useContext(UserContext);
 
   const deletePost = (postid) => {
+    console.log("hi")
     fetch(`${SERVER_URL}/api/v1/posts/deletepost/${postid}`, {
       method: "delete",
       headers: {
