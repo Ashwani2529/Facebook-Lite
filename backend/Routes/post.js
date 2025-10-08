@@ -1,12 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const {v2: cloudinary} = require('cloudinary');
 const Post = mongoose.model('Post')
 const User = mongoose.model('User')
 const Notification = mongoose.model('Notification')
 const login = require('../middleware/login')
 const {authenticate} = require('../middleware/auth/authenticate')
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 // Create post endpoint
 router.post('/createpost', login, async (req, res) => {
     try {
@@ -257,26 +262,31 @@ router.put('/unlike', login, async (req, res) => {
     }
   });
     
-// Delete post with better validation
-router.delete('/deletepost/:postId', login, async (req, res) => {
-    try {
-      const post = await Post.findById(req.params.postId).populate('postedBy', '_id');
-  
-      if (!post) {
-        return res.status(404).json({ error: 'Post not found' });
-      }
-  
-      if (post.postedBy._id.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ error: 'You can only delete your own posts' });
-      }
-  
-      await post.deleteOne();
-      res.json({ message: 'Post deleted successfully', post });
-    } catch (err) {
-      console.error('Error deleting post:', err);
-      res.status(500).json({ error: 'Failed to delete post' });
+router.delete('/deletepost/:postId', async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId).populate('postedBy', '_id');
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
     }
-  });
+
+    // 🔑 Extract Cloudinary public_id
+    if (post.photo) {
+      const parts = post.photo.split('/');
+      const filename = parts[parts.length - 1]; // e.g. abc123.jpg
+      const publicId = filename.split('.')[0];  // e.g. abc123
+
+      await cloudinary.uploader.destroy(publicId, { invalidate: true });
+    }
+
+    await post.deleteOne();
+
+    res.json({ message: 'Post deleted successfully', postId: req.params.postId });
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
 
 // Get individual post by ID
 router.get('/post/:postId', authenticate, async (req, res) => {

@@ -276,7 +276,7 @@ class FacebookLiteServer {
    */
   startServer() {
     const port = config.server.port;
-    
+    this.server.setTimeout(10 * 60 * 1000);
     this.server.listen(port, () => {
       logger.info(`🎉 Facebook Lite server started successfully!`);
       logger.info(`💬 Socket.IO enabled for real-time chat`);
