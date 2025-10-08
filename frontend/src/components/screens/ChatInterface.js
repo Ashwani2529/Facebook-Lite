@@ -477,7 +477,7 @@ const ChatInterface = () => {
             }}
           />
           <div>
-            <h6 className="mb-0 text-gray-900 dark:text-black">{otherUser.name}</h6>
+            <h6 className="mb-0 text-gray-900 dark:text-black underline" onClick={() => navigate(`/profile/${otherUser._id}`)}>{otherUser.name}</h6>
             <small className="text-gray-500">Online</small>
           </div>
         </div>

@@ -19,14 +19,14 @@ const Card = (props) => {
   const { state, dispatch } = useContext(UserContext);
 
   const deletePost = (postid) => {
-    console.log("delete is called")
-    fetch(`${SERVER_URL}/deletepost/${postid}`, {
+    fetch(`${SERVER_URL}/api/v1/posts/deletepost/${postid}`, {
       method: "delete",
       headers: {
         "Authorization": "Bearer " + localStorage.getItem("jwt")
       }
     }).then(res => res.json())
-      .then(result => props.updateHome(result))
+      .then(result => props.updateHome(result));
+
   }
 
   const [comment, setComment] = useState(false);
