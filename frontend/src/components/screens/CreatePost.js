@@ -67,6 +67,7 @@ const CreatePost = () => {
 
   // Handle file input change
   const handleFileChange = (e) => {
+    return;
     const file = e.target.files[0];
     handleImageSelect(file);
   };
@@ -294,11 +295,11 @@ const CreatePost = () => {
                   >
                     <input
                       type="file"
+                      disabled={true}
                       accept="image/*"
                       onChange={handleFileChange}
                       className="hidden"
                       id="image-upload"
-                      disabled={loading}
                     />
                     <label htmlFor="image-upload" className="cursor-pointer">
                       <div className="flex flex-col items-center space-y-3">
