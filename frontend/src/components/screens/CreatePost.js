@@ -365,7 +365,8 @@ const CreatePost = () => {
                   type="submit"
                   variant="facebook"
                   loading={loading}
-                  disabled={loading || !formData.body.trim() || !formData.image}
+                  disabled={true}
+                  //disabled={loading || !formData.body.trim() || !formData.image}
                   className="flex-1"
                 >
                   {loading ? 'Creating...' : 'Create Post'}
