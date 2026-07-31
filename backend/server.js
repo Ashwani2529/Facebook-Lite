@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('fs');
 const http = require('http');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -81,7 +82,7 @@ class FacebookLiteServer {
     this.server = http.createServer(this.app);
     this.io = socketIo(this.server, {
       cors: {
-        origin: config.cors.origin,
+        origin: config.cors.allowedOrigins,
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
       },
@@ -187,6 +188,20 @@ class FacebookLiteServer {
   }
 
   setupRoutes() {
+    this.app.get('/', (req, res) => {
+      res.status(200).json({
+        success: true,
+        service: 'Facebook Lite API',
+        version: '2.1.0',
+        status: database.isConnected() ? 'ready' : 'degraded',
+        frontend: config.cors.origin,
+        health: '/health',
+        api: config.api.prefix
+      });
+    });
+
+    this.app.get('/favicon.ico', (req, res) => res.status(204).end());
+
     this.app.get('/health', (req, res) => {
       res.status(database.isConnected() ? 200 : 503).json({
         success: database.isConnected(),
@@ -219,13 +234,18 @@ class FacebookLiteServer {
     this.app.use('/api', apiRouter);
     this.app.use('/', apiRouter);
 
-    if (config.server.isProduction) {
+    if (process.env.SERVE_FRONTEND === 'true') {
       const buildPath = path.join(__dirname, '../frontend/build');
-      this.app.use(express.static(buildPath));
-      this.app.get('*', (req, res, next) => {
-        if (req.originalUrl.startsWith('/api')) return next();
-        return res.sendFile(path.join(buildPath, 'index.html'));
-      });
+      const indexPath = path.join(buildPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        this.app.use(express.static(buildPath));
+        this.app.get('*', (req, res, next) => {
+          if (req.originalUrl.startsWith('/api')) return next();
+          return res.sendFile(indexPath);
+        });
+      } else {
+        logger.warn('SERVE_FRONTEND is enabled but no frontend build was found', { indexPath });
+      }
     }
   }
 

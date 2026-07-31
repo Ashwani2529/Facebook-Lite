@@ -64,20 +64,7 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps, Postman)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = [
-      config.cors.origin,
-      'http://localhost:3000',
-      'http://127.0.0.1:3000'
-    ];
-    
-    if (config.server.isDevelopment) {
-      // In development, allow any localhost origin
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        return callback(null, true);
-      }
-    }
-    
-    if (allowedOrigins.includes(origin)) {
+    if (config.cors.allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       logger.logSecurity('CORS violation attempt', {

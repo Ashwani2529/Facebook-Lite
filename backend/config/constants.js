@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+const normalizeOrigin = origin => origin?.trim().replace(/\/+$/, '');
+const clientOrigin = normalizeOrigin(process.env.CLIENT_URL)
+  || 'https://facebook-lite.vercel.app';
+
 const config = {
   // Server Configuration
   server: {
@@ -33,7 +37,13 @@ const config = {
 
   // CORS Configuration
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: clientOrigin,
+    allowedOrigins: [
+      clientOrigin,
+      'https://facebook-lite.vercel.app',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ].filter((origin, index, origins) => origin && origins.indexOf(origin) === index),
     credentials: true,
     optionsSuccessStatus: 200
   },
