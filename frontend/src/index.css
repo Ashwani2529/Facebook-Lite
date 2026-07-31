@@ -50,8 +50,8 @@ body {
   background:
     radial-gradient(circle at 8% 2%, rgba(91, 92, 226, .12), transparent 26rem),
     radial-gradient(circle at 92% 20%, rgba(236, 72, 153, .08), transparent 22rem),
-    var(--canvas);
-  color: var(--text);
+    var(--canvas) !important;
+  color: var(--text) !important;
   font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -84,6 +84,44 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 ::-webkit-scrollbar-thumb { background: rgba(112, 120, 145, .36); border: 3px solid transparent; border-radius: 999px; background-clip: padding-box; }
 
 .app-shell { min-height: 100vh; color: var(--text); }
+
+/*
+ * Bootstrap ships global body and `bg-white` rules (some with !important).
+ * These guards keep shared surfaces and text bound to the active theme tokens.
+ */
+html.dark body,
+html.dark #root,
+html.dark .app-shell {
+  background-color: var(--canvas) !important;
+  color: var(--text) !important;
+}
+.dark .bg-white,
+.dark .card,
+.dark .modal-content,
+.dark .dropdown-menu {
+  border-color: var(--border) !important;
+  background-color: var(--surface-solid) !important;
+  color: var(--text) !important;
+}
+.dark .bg-gray-50 { background-color: var(--canvas) !important; }
+.dark .bg-gray-100 { background-color: var(--surface-muted) !important; }
+.dark .dark\:bg-facebook-card,
+.dark .dark\:bg-gray-800 { background-color: var(--surface-solid) !important; }
+.dark .dark\:bg-facebook-dark { background-color: var(--canvas) !important; }
+.dark .dark\:bg-gray-700 { background-color: var(--surface-muted) !important; }
+.dark .text-black,
+.dark .dark\:text-black,
+.dark .dark\:text-gray-900,
+.dark .dark\:text-gray-800 { color: var(--text) !important; }
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .dark\:text-gray-300,
+.dark .dark\:text-gray-400 { color: var(--text-muted) !important; }
+.theme-card {
+  border-color: var(--border) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
 .app-loading-bar {
   position: fixed; top: 0; left: 0; z-index: 9999; width: 38%; height: 3px;
   background: linear-gradient(90deg, var(--brand), var(--accent));
@@ -206,6 +244,36 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .text-gray-900, .dark .dark\:text-white { color: var(--text) !important; }
 .text-gray-500, .text-gray-600, .dark .dark\:text-gray-400 { color: var(--text-muted) !important; }
 
+.profile-page {
+  min-height: 100vh;
+  padding: 104px clamp(16px, 4vw, 56px) 72px !important;
+  background: var(--canvas);
+  color: var(--text);
+}
+.profile-page > .row:first-child {
+  width: min(1080px, 100%);
+  margin: 0 auto 32px;
+  padding: clamp(20px, 4vw, 36px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(18px);
+}
+.profile-page .picture {
+  display: grid;
+  place-items: center;
+}
+.profile-page .picture img {
+  width: min(100%, 260px);
+  height: auto;
+  aspect-ratio: 1;
+}
+.profile-page > .row:last-child {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes loading-bar { from { transform: translateX(-80%); } to { transform: translateX(250%); } }
 @keyframes reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
@@ -225,6 +293,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .post-card, .card, .surface-card { border-radius: 16px !important; }
   .empty-state { padding: 36px 20px; }
   .modal-dialog { margin: 10px !important; }
+  .profile-page { padding: 84px 10px 72px !important; }
+  .profile-page > .row:first-child { padding: 18px 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

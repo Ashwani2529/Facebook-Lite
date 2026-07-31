@@ -202,21 +202,21 @@ const Navbar = () => {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full mt-2 w-auto bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50"
+                className="absolute top-full mt-2 w-full min-w-[300px] bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50 overflow-hidden"
               >
                 {searchResults.map((user) => (
                   <Link
                     key={user._id}
                     to={`/profile/${user._id}`}
                     onClick={() => setShowSearchResults(false)}
-                    className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-200 transition-colors"
+                    className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors no-underline"
                   >
                     <Avatar src={user.pic} name={user.name} size="sm" />
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-black">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {user.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-800">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {user.email}
                       </p>
                     </div>
@@ -292,7 +292,7 @@ const Navbar = () => {
                   style={{ maxHeight: '400px' }}
                 >
                   <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-400 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-black">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Notifications
                     </h3>
                     {notifications.some(n => !n.read) && (
@@ -334,7 +334,7 @@ const Navbar = () => {
                           }`}
                         >
                           <div className="flex-shrink-0">
-                            <div className="dark:text-black w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <div className="text-gray-700 dark:text-gray-200 w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                               {notification.type === 'like' && <span className="text-red-500">❤️</span>}
                               {notification.type === 'comment' && <span className="text-blue-500">💬</span>}
                               {notification.type === 'follow' && <span className="text-green-500">👤</span>}
@@ -344,10 +344,10 @@ const Navbar = () => {
                             </div>
                           </div>
                           <div className="ml-3 flex-1">
-                            <p className="text-sm text-gray-900 dark:text-black">
+                            <p className="text-sm text-gray-900 dark:text-white">
                               {notification.message}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-800 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {notification.time}
                             </p>
                           </div>
@@ -411,7 +411,7 @@ const Navbar = () => {
                   <Link
                     to="/profile"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-200 no-underline"
+                    className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 no-underline"
                   >
                     <HiUser className="w-4 h-4 mr-3" />
                     Profile
@@ -420,7 +420,7 @@ const Navbar = () => {
                   <Link
                     to="/settings"
                     onClick={() => setIsUserMenuOpen(false)}
-                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-900 hover:bg-gray-50 dark:hover:bg-gray-200 no-underline"
+                    className="flex items-center w-full px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 no-underline"
                   >
                     <HiCog className="w-4 h-4 mr-3" />
                     Settings
@@ -498,7 +498,7 @@ const Navbar = () => {
               
               {/* Mobile Search Results */}
               {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute top-full mt-2 w-auto bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <div className="absolute top-full mt-2 w-full min-w-[280px] bg-white dark:bg-facebook-card rounded-xl shadow-strong border border-gray-200 dark:border-gray-700 py-2 z-50 overflow-hidden">
                   {searchResults.map((user) => (
                     <Link
                       key={user._id}
@@ -507,12 +507,12 @@ const Navbar = () => {
                         setShowSearchResults(false);
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-200"
+                      className="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 no-underline"
                     >
                       <Avatar src={user.pic} name={user.name} size="sm" />
                       <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900 dark:text-black">{user.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-800">{user.email}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                       </div>
                     </Link>
                   ))}

@@ -35,7 +35,7 @@ const Card = ({
   };
 
   const baseClasses = `
-    rounded-xl transition-all duration-300
+    theme-card rounded-xl transition-all duration-300
     ${variants[variant]}
     ${paddings[padding]}
     ${shadows[shadow]}

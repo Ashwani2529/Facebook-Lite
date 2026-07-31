@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useReducer, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import './index.css';
 
 import ChatInterface from './components/screens/ChatInterface';
 import CreatePost from './components/screens/CreatePost';

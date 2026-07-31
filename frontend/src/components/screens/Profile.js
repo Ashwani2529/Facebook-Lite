@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../layout/Navbar';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import PopUpDailoge from './PopUpDailoge';
 import Profilecards from './Profilecards';
 import { IconButton } from '@mui/material';
@@ -120,7 +119,7 @@ const Profile = () => {
   return (
     <>
       <Navbar />
-      <div className='container-fluid'>
+      <main className='container-fluid profile-page'>
         <div className='row'>
 
 
@@ -238,7 +237,7 @@ const Profile = () => {
           }
         </div>
 
-      </div>
+      </main>
     </>
   )
 }
