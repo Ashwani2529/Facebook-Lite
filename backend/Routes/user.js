@@ -146,24 +146,26 @@ router.put('/updatepic', login, (req, res) => {
 })
 
 // Search users with enhanced data for modern UI
-router.post('/search-users', (req, res) => {
+router.post('/search-users', authenticate, async (req, res) => {
     const { query } = req.body;
     
     if (!query || !query.trim()) {
         return res.status(422).json({ error: "Search query is required" });
     }
     
-    let userPattern = new RegExp(query.trim(), "i"); // Search anywhere in the name, case insensitive
-    User.find({ name: { $regex: userPattern } })
-        .select("_id name email pic") // Include email and pic for modern UI
-        .limit(10) // Limit results for performance
-        .then(user => {
-            res.json({ user })
+    try {
+        const escapedQuery = query.trim().slice(0, 60).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const userPattern = new RegExp(escapedQuery, 'i');
+        const user = await User.find({
+            _id: { $ne: req.user._id },
+            name: { $regex: userPattern }
         })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({ error: "Failed to search users" })
-        })
+            .select('_id name email pic')
+            .limit(10);
+        res.json({ user });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to search users' });
+    }
 })
 
 // Get user's followers
@@ -230,7 +232,7 @@ router.delete('/delete-account', authenticate, async (req, res) => {
       participants: userId
     });
 
-    for (let chat of chats) {
+    for (const chat of chats) {
       // Delete all messages in the chat
       await mongoose.model('Message').deleteMany({ chat: chat._id });
       // Delete the chat

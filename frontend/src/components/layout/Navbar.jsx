@@ -25,6 +25,9 @@ import Input from '../ui/Input';
 import Avatar from '../ui/Avatar';
 import SERVER_URL from '../../server_url';
 import logo from './logo2.png';
+import { useDebounce } from '../../hooks/useDebounce';
+import { disconnectSocket } from '../../services/socket';
+import toast from 'react-hot-toast';
 const Navbar = () => {
   const { state, dispatch } = useContext(UserContext);
   const { isDarkMode, toggleDarkMode } = useTheme();
@@ -38,6 +41,7 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const debouncedSearch = useDebounce(searchQuery, 320);
 
   // Format time ago helper
   const formatTimeAgo = (dateString) => {
@@ -56,34 +60,43 @@ const Navbar = () => {
   };
 
   // Handle search
-  const handleSearch = async (query) => {
-    setSearchQuery(query);
-    if (query.trim().length > 0) {
+  useEffect(() => {
+    const query = debouncedSearch.trim();
+    if (!query) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const search = async () => {
       try {
         const response = await fetch(`${SERVER_URL}/api/v1/users/search-users`, {
           method: 'POST',
+          signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('jwt')}`
           },
           body: JSON.stringify({ query })
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Search is unavailable');
         setSearchResults(data.user || []);
         setShowSearchResults(true);
       } catch (error) {
-        console.error('Search error:', error);
+        if (error.name !== 'AbortError') toast.error(error.message);
       }
-    } else {
-      setSearchResults([]);
-      setShowSearchResults(false);
-    }
-  };
+    };
+    search();
+    return () => controller.abort();
+  }, [debouncedSearch]);
 
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('jwt');
     localStorage.removeItem('user');
+    disconnectSocket();
     dispatch({ type: 'CLEAR' });
     navigate('/login');
   };
@@ -179,7 +192,7 @@ const Navbar = () => {
               }}
               placeholder="Search users..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               icon={<HiSearch className="w-5 h-5" />}
               className="w-full"
             />

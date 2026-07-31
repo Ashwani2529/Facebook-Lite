@@ -2,12 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { authenticate, optionalAuth } = require('../middleware/auth/authenticate');
-const { 
-  validateUserRegistration, 
-  validateUserLogin,
-  validateParams 
-} = require('../middleware/validation/validators');
+const { authenticate } = require('../middleware/auth/authenticate');
+const { authRateLimit } = require('../middleware/security/security');
 
 // Import error handling utilities
 const { catchAsync, sendResponse, AppError } = require('../middleware/errorHandler');
@@ -21,7 +17,6 @@ const User = require('../models/user');
 
 // JWT utility
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 
 /**
  * @desc    Get API info
@@ -45,7 +40,7 @@ router.get('/', (req, res) => {
  * @route   POST /api/v1/auth/signup
  * @access  Public
  */
-router.post('/signup', catchAsync(async (req, res, next) => {
+router.post('/signup', authRateLimit, catchAsync(async (req, res) => {
   const { name, email, password, phone, dateOfBirth, gender, pic } = req.body;
 
   console.log('Signup attempt:', { name, email, phone, gender, dateOfBirth });
@@ -131,7 +126,7 @@ router.get('/test', (req, res) => {
  * @route   POST /api/v1/auth/signin
  * @access  Public
  */
-router.post('/signin', catchAsync(async (req, res, next) => {
+router.post('/signin', authRateLimit, catchAsync(async (req, res) => {
   const { email, password } = req.body;
 
   // Basic validation
@@ -201,7 +196,7 @@ router.get('/verify-token', authenticate, catchAsync(async (req, res) => {
  * @route   GET /api/v1/auth/me
  * @access  Private
  */
-router.get('/me', authenticate, catchAsync(async (req, res, next) => {
+router.get('/me', authenticate, catchAsync(async (req, res) => {
   console.log('GET /me route hit');
   console.log('User from auth:', req.user?.email);
   
@@ -235,7 +230,7 @@ router.get('/me', authenticate, catchAsync(async (req, res, next) => {
  * @route   PUT /api/v1/auth/me
  * @access  Private
  */
-router.put('/me', authenticate, catchAsync(async (req, res, next) => {
+router.put('/me', authenticate, catchAsync(async (req, res) => {
   console.log('PUT /me route hit');
   console.log('Request body:', req.body);
   console.log('User from auth:', req.user?.email);
@@ -300,7 +295,7 @@ router.put('/me', authenticate, catchAsync(async (req, res, next) => {
  * @route   PUT /api/v1/auth/change-password
  * @access  Private
  */
-router.put('/change-password', authenticate, catchAsync(async (req, res, next) => {
+router.put('/change-password', authenticate, catchAsync(async (req, res) => {
   console.log('PUT /change-password route hit');
   console.log('User from auth:', req.user?.email);
   
@@ -383,7 +378,7 @@ router.post('/logout', authenticate, catchAsync(async (req, res) => {
  * @route   POST /api/v1/auth/forgot-password
  * @access  Public
  */
-router.post('/forgot-password', catchAsync(async (req, res, next) => {
+router.post('/forgot-password', authRateLimit, catchAsync(async (req, res, next) => {
   const { email } = req.body;
 
   if (!email) {

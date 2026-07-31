@@ -35,8 +35,8 @@ module.exports = {
         facebook: {
           primary: '#1877f2',
           secondary: '#42a5f5',
-          dark: '#161925',
-          card: '#23395b',
+          dark: '#0d1020',
+          card: '#181c30',
         }
       },
       fontFamily: {
@@ -68,9 +68,9 @@ module.exports = {
         xs: '2px',
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'strong': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        'soft': '0 8px 28px rgba(28, 34, 55, 0.07)',
+        'medium': '0 18px 46px rgba(35, 41, 70, 0.12)',
+        'strong': '0 28px 80px rgba(30, 36, 66, 0.18)',
       }
     },
   },

@@ -135,7 +135,7 @@ const sanitizeInput = [
 const securityLogger = (req, res, next) => {
   // Log suspicious patterns
   const suspiciousPatterns = [
-    /(\.\.\/|\.\.\\)/g, // Path traversal
+    /(\.\.\/|\.\.\\)/, // Path traversal
     /<script/gi, // XSS attempts
     /union.*select/gi, // SQL injection
     /exec\(/gi, // Command injection
@@ -256,10 +256,11 @@ const validateUserAgent = (req, res, next) => {
  * Combined security middleware stack (simplified)
  */
 const applySecurity = (app) => {
-  
-  // CORS configuration
+  app.use(helmetConfig);
   app.use(cors(corsOptions));
-  
+  app.use(limitRequestSize);
+  app.use(ipBlocking);
+  app.use(validateUserAgent);
   logger.info('Security middleware applied successfully');
 };
 

@@ -144,7 +144,7 @@ router.put('/like', login, async (req, res) => {
   
       const updatedPost = await Post.findByIdAndUpdate(
         postId,
-        { $push: { likes: req.user._id } },
+        { $addToSet: { likes: req.user._id } },
         { new: true }
       )
         .populate('postedBy', '_id name email pic')
@@ -152,6 +152,16 @@ router.put('/like', login, async (req, res) => {
   
       if (!updatedPost) {
         return res.status(404).json({ error: 'Post not found' });
+      }
+
+      if (updatedPost.postedBy._id.toString() !== req.user._id.toString()) {
+        await Notification.createNotification({
+          recipient: updatedPost.postedBy._id,
+          sender: req.user._id,
+          type: 'like',
+          message: `${req.user.name} liked your post`,
+          relatedPost: updatedPost._id
+        });
       }
   
       res.json(updatedPost);
@@ -182,15 +192,6 @@ router.put('/unlike', login, async (req, res) => {
       if (!updatedPost) {
         return res.status(404).json({ error: 'Post not found' });
       }
-  
-      // Create notification for post owner
-      await Notification.createNotification({
-        recipient: updatedPost.postedBy._id,
-        sender: req.user._id,
-        type: 'like',
-        message: `${req.user.name} liked your post`,
-        relatedPost: updatedPost._id
-      });
   
       res.json(updatedPost);
     } catch (err) {
@@ -226,19 +227,20 @@ router.put('/unlike', login, async (req, res) => {
         return res.status(404).json({ error: 'Post not found' });
       }
   
-      // Create notification for post owner
-      await Notification.createNotification({
-        recipient: updatedPost.postedBy._id,
-        sender: req.user._id,
-        type: 'comment',
-        message: `${req.user.name} commented on your post`,
-        relatedPost: updatedPost._id
-      });
+      if (updatedPost.postedBy._id.toString() !== req.user._id.toString()) {
+        await Notification.createNotification({
+          recipient: updatedPost.postedBy._id,
+          sender: req.user._id,
+          type: 'comment',
+          message: `${req.user.name} commented on your post`,
+          relatedPost: updatedPost._id
+        });
+      }
 
       // Emit real-time comment update via Socket.IO
       const io = req.app.get('io');
       if (io) {
-        io.emit('new_comment', {
+        io.to(`post:${postId}`).emit('new_comment', {
           postId: postId,
           comment: {
             text: text.trim(),
@@ -262,12 +264,16 @@ router.put('/unlike', login, async (req, res) => {
     }
   });
     
-router.delete('/deletepost/:postId', async (req, res) => {
+router.delete('/deletepost/:postId', authenticate, async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId).populate('postedBy', '_id');
 
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
+    }
+
+    if (post.postedBy._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'You can only delete your own posts' });
     }
 
     // 🔑 Extract Cloudinary public_id
@@ -276,7 +282,9 @@ router.delete('/deletepost/:postId', async (req, res) => {
       const filename = parts[parts.length - 1]; // e.g. abc123.jpg
       const publicId = filename.split('.')[0];  // e.g. abc123
 
-      await cloudinary.uploader.destroy(publicId, { invalidate: true });
+      if (process.env.CLOUDINARY_CLOUD_NAME) {
+        await cloudinary.uploader.destroy(publicId, { invalidate: true });
+      }
     }
 
     await post.deleteOne();

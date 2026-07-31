@@ -1,222 +1,203 @@
-/**
- * Facebook Lite Backend Server v2.0
- * Modern, secure, and scalable Express.js application
- */
-
-// Import required dependencies
 const express = require('express');
 const http = require('http');
-const socketIo = require('socket.io');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const path = require('path');
+const socketIo = require('socket.io');
 
-// Import configuration and utilities
 const config = require('./config/constants');
 const database = require('./config/database');
 const logger = require('./utils/logger');
+const {
+  applySecurity,
+  apiRateLimit,
+  sanitizeInput,
+  securityLogger
+} = require('./middleware/security/security');
+const {
+  globalErrorHandler,
+  notFoundHandler,
+  catchAsync,
+  timeoutHandler,
+  uncaughtExceptionHandler,
+  unhandledRejectionHandler
+} = require('./middleware/errorHandler');
 
-// Import middleware
-const { applySecurity } = require('./middleware/security/security');
-const { globalErrorHandler, notFoundHandler, catchAsync, timeoutHandler, uncaughtExceptionHandler, unhandledRejectionHandler } = require('./middleware/errorHandler');
-
-// Import models (this will register them with mongoose)  
 require('./models/user');
 require('./models/post');
 require('./models/chatRequest');
 require('./models/chat');
 require('./models/notification');
 
-
-// Import routes
 const authRoutes = require('./Routes/auth');
 const postRoutes = require('./Routes/post');
 const userRoutes = require('./Routes/user');
 const chatRoutes = require('./Routes/chat');
 const notificationRoutes = require('./Routes/notifications');
 
-/**
- * Express Application Setup
- */
 class FacebookLiteServer {
   constructor() {
     this.app = express();
     this.server = null;
     this.io = null;
-    
-    // Handle uncaught exceptions and unhandled rejections
+    this.shuttingDown = false;
     this.setupProcessHandlers();
-    
-    // Initialize the application
-    this.init();
+    this.ready = this.init();
   }
 
-  /**
-   * Initialize the application
-   */
   async init() {
-    try {
-      // Connect to database first
-      await this.connectDatabase();
-      
-      // Setup middleware
-      this.setupMiddleware();
-      
-      // Setup Socket.IO
-      this.setupSocketIO();
-      
-      // Setup routes
-      this.setupRoutes();
-      
-      // Setup error handling
-      this.setupErrorHandling();
-      
-      // Start the server
-      this.startServer();
-      
-    } catch (error) {
-      logger.error('Failed to initialize server:', error);
-      process.exit(1);
-    }
-  }
-
-  /**
-   * Connect to MongoDB database
-   */
-  async connectDatabase() {
     try {
       await database.connect();
       database.setupEventHandlers();
-      logger.info('📊 Database setup completed');
+      this.setupMiddleware();
+      this.setupSocketIO();
+      this.setupRoutes();
+      this.setupErrorHandling();
+      this.startServer();
     } catch (error) {
-      logger.error('💀 Database connection failed:', error);
+      logger.error('Failed to initialize server', { error: error.message });
+      if (require.main === module) process.exit(1);
       throw error;
     }
   }
 
-  /**
-   * Setup middleware stack
-   */
   setupMiddleware() {
-    // Request timeout
+    this.app.set('trust proxy', 1);
     this.app.use(timeoutHandler(30000));
-
-    // Security middleware (CORS, Helmet, Rate limiting, etc.)
     applySecurity(this.app);
+    this.app.use(express.json({ limit: config.security.maxFileSize }));
+    this.app.use(express.urlencoded({ extended: true, limit: config.security.maxFileSize }));
+    this.app.use(sanitizeInput);
+    this.app.use(securityLogger);
 
-    // Body parsing middleware
-    this.app.use(express.json({ 
-      limit: config.security.maxFileSize,
-      verify: (req, res, buf) => {
-        req.rawBody = buf;
-      }
-    }));
-    
-    this.app.use(express.urlencoded({ 
-      extended: true, 
-      limit: config.security.maxFileSize 
-    }));
-
-    // Request logging middleware
     this.app.use((req, res, next) => {
-      const startTime = Date.now();
-      
-      // Log request
-      logger.info(`📥 ${req.method} ${req.originalUrl}`, {
-        method: req.method,
-        url: req.originalUrl,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-
-      // Log response when finished
-      res.on('finish', () => {
-        const responseTime = Date.now() - startTime;
-        logger.logRequest(req, res, responseTime);
-      });
-
+      const startedAt = Date.now();
+      res.on('finish', () => logger.logRequest(req, res, Date.now() - startedAt));
       next();
     });
-
-    // Trust proxy (important for IP detection behind reverse proxies)
-    this.app.set('trust proxy', 1);
-
-    logger.info('🛡️ Middleware setup completed');
   }
 
-  /**
-   * Setup Socket.IO
-   */
   setupSocketIO() {
-    // Create HTTP server from Express app
     this.server = http.createServer(this.app);
-    
-    // Initialize Socket.IO
     this.io = socketIo(this.server, {
       cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:3000",
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        origin: config.cors.origin,
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
+      },
+      pingInterval: 25000,
+      pingTimeout: 20000,
+      connectionStateRecovery: {
+        maxDisconnectionDuration: 2 * 60 * 1000,
+        skipMiddlewares: false
+      }
+    });
+    this.app.set('io', this.io);
+
+    this.io.use(async (socket, next) => {
+      try {
+        const header = socket.handshake.headers.authorization;
+        const token = socket.handshake.auth?.token
+          || (header?.startsWith('Bearer ') ? header.slice(7) : null);
+        if (!token) return next(new Error('Authentication required'));
+
+        const payload = jwt.verify(token, config.jwt.secret);
+        const user = await mongoose.model('User')
+          .findById(payload._id)
+          .select('_id name isActive');
+        if (!user || user.isActive === false) return next(new Error('Invalid session'));
+        socket.user = user;
+        return next();
+      } catch (error) {
+        return next(new Error(error.name === 'TokenExpiredError' ? 'Session expired' : 'Invalid session'));
       }
     });
 
-    // Make io accessible to routes
-    this.app.set('io', this.io);
+    this.io.on('connection', socket => {
+      const userId = socket.user._id.toString();
+      socket.join(`user:${userId}`);
+      logger.info('Socket connected', { socketId: socket.id, userId });
 
-    // Socket.IO connection handling
-    this.io.on('connection', (socket) => {
-      logger.info(`👤 User connected: ${socket.id}`);
+      const canAccessChat = async chatId => (
+        mongoose.isValidObjectId(chatId)
+        && Boolean(await mongoose.model('Chat').exists({
+          _id: chatId,
+          participants: socket.user._id,
+          isActive: true
+        }))
+      );
 
-      // Join chat room
-      socket.on('join_chat', (chatId) => {
-        socket.join(chatId);
-        logger.info(`💬 User ${socket.id} joined chat: ${chatId}`);
+      socket.on('join_chat', async (payload = {}, acknowledgement = () => {}) => {
+        try {
+          const chatId = typeof payload === 'string' ? payload : payload.chatId;
+          if (!(await canAccessChat(chatId))) {
+            return acknowledgement({ ok: false, error: 'You cannot access this chat' });
+          }
+          await socket.join(`chat:${chatId}`);
+          return acknowledgement({ ok: true });
+        } catch (error) {
+          logger.error('Socket join_chat failed', { userId, error: error.message });
+          return acknowledgement({ ok: false, error: 'Unable to join chat' });
+        }
       });
 
-      // Leave chat room
-      socket.on('leave_chat', (chatId) => {
-        socket.leave(chatId);
-        logger.info(`👋 User ${socket.id} left chat: ${chatId}`);
+      socket.on('leave_chat', async (payload = {}) => {
+        const chatId = typeof payload === 'string' ? payload : payload.chatId;
+        if (mongoose.isValidObjectId(chatId)) await socket.leave(`chat:${chatId}`);
       });
 
-      // Handle typing indicators
-      socket.on('typing', (data) => {
-        socket.to(data.chatId).emit('user_typing', {
-          userId: data.userId,
-          userName: data.userName
+      socket.on('join_post', async (payload = {}) => {
+        const postId = typeof payload === 'string' ? payload : payload.postId;
+        if (mongoose.isValidObjectId(postId)) {
+          await socket.join(`post:${postId}`);
+        }
+      });
+
+      socket.on('leave_post', async (payload = {}) => {
+        const postId = typeof payload === 'string' ? payload : payload.postId;
+        if (mongoose.isValidObjectId(postId)) await socket.leave(`post:${postId}`);
+      });
+
+      const forwardTyping = async (event, payload = {}) => {
+        if (!(await canAccessChat(payload.chatId))) return;
+        socket.to(`chat:${payload.chatId}`).emit(event, {
+          chatId: payload.chatId,
+          userId,
+          userName: socket.user.name
+        });
+      };
+
+      socket.on('typing', payload => {
+        forwardTyping('user_typing', payload).catch(error => {
+          logger.error('Typing event failed', { userId, error: error.message });
         });
       });
-
-      socket.on('stop_typing', (data) => {
-        socket.to(data.chatId).emit('user_stopped_typing', {
-          userId: data.userId
+      socket.on('stop_typing', payload => {
+        forwardTyping('user_stopped_typing', payload).catch(error => {
+          logger.error('Stop typing event failed', { userId, error: error.message });
         });
       });
-
-      // Handle disconnect
-      socket.on('disconnect', () => {
-        logger.info(`❌ User disconnected: ${socket.id}`);
+      socket.on('error', error => {
+        logger.error('Socket error', { socketId: socket.id, userId, error: error.message });
+      });
+      socket.on('disconnect', reason => {
+        logger.info('Socket disconnected', { socketId: socket.id, userId, reason });
       });
     });
-
-    logger.info('🔌 Socket.IO setup completed');
   }
 
-  /**
-   * Setup API routes
-   */
   setupRoutes() {
-    // Health check endpoint
     this.app.get('/health', (req, res) => {
-      res.status(200).json({
-        success: true,
+      res.status(database.isConnected() ? 200 : 503).json({
+        success: database.isConnected(),
         message: 'Facebook Lite API is running',
         timestamp: new Date().toISOString(),
-        version: '2.0.0',
+        version: '2.1.0',
         environment: config.server.nodeEnv,
         database: database.isConnected() ? 'connected' : 'disconnected'
       });
     });
 
-    // Database health check
     this.app.get('/health/db', catchAsync(async (req, res) => {
       const dbHealth = await database.healthCheck();
       res.status(dbHealth.status === 'healthy' ? 200 : 503).json({
@@ -226,153 +207,75 @@ class FacebookLiteServer {
       });
     }));
 
-    // API routes
     const apiRouter = express.Router();
-    
-    // Mount route modules
+    apiRouter.use(apiRateLimit);
     apiRouter.use('/auth', authRoutes);
     apiRouter.use('/posts', postRoutes);
     apiRouter.use('/users', userRoutes);
     apiRouter.use('/chat', chatRoutes);
     apiRouter.use('/notifications', notificationRoutes);
 
-    // Mount API router
     this.app.use(config.api.prefix, apiRouter);
-
-    // Legacy route support (for backward compatibility)
     this.app.use('/api', apiRouter);
     this.app.use('/', apiRouter);
 
-    // Serve static files in production
     if (config.server.isProduction) {
-      this.app.use(express.static(path.join(__dirname, '../frontend/build')));
-      
-      // Handle React Router (return all non-API requests to React app)
-      this.app.get('*', (req, res) => {
-        if (!req.originalUrl.startsWith('/api')) {
-          res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-        }
+      const buildPath = path.join(__dirname, '../frontend/build');
+      this.app.use(express.static(buildPath));
+      this.app.get('*', (req, res, next) => {
+        if (req.originalUrl.startsWith('/api')) return next();
+        return res.sendFile(path.join(buildPath, 'index.html'));
       });
     }
-
-    logger.info('🚀 Routes setup completed');
   }
 
-  /**
-   * Setup error handling
-   */
   setupErrorHandling() {
-    // Handle 404 for undefined routes
     this.app.all('*', notFoundHandler);
-
-    // Global error handling middleware
     this.app.use(globalErrorHandler);
-
-    logger.info('❌ Error handling setup completed');
   }
 
-  /**
-   * Start the HTTP server
-   */
   startServer() {
-    const port = config.server.port;
     this.server.setTimeout(10 * 60 * 1000);
-    this.server.listen(port, () => {
-      logger.info(`🎉 Facebook Lite server started successfully!`);
-      logger.info(`💬 Socket.IO enabled for real-time chat`);
-      logger.info(`💾 Database: ${database.isConnected() ? '✅ Connected' : '❌ Disconnected'}`);
-      
-      if (config.server.isDevelopment) {
-        logger.info(`🔧 Development mode - detailed logging enabled`);
-      }
+    this.server.listen(config.server.port, () => {
+      logger.info('Facebook Lite server started', { port: config.server.port });
     });
-
-    // Handle server errors
-    this.server.on('error', (error) => {
-      if (error.syscall !== 'listen') {
-        throw error;
-      }
-
-      const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
-
-      switch (error.code) {
-        case 'EACCES':
-          logger.error(`${bind} requires elevated privileges`);
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          logger.error(`${bind} is already in use`);
-          process.exit(1);
-          break;
-        default:
-          throw error;
-      }
+    this.server.on('error', error => {
+      logger.error('HTTP server error', { code: error.code, error: error.message });
+      if (['EACCES', 'EADDRINUSE'].includes(error.code)) process.exit(1);
     });
-
-    // Graceful shutdown
     this.setupGracefulShutdown();
   }
 
-  /**
-   * Setup graceful shutdown
-   */
   setupGracefulShutdown() {
-    const gracefulShutdown = async (signal) => {
-      logger.info(`🛑 ${signal} received, shutting down gracefully...`);
-      
+    const shutdown = async signal => {
+      if (this.shuttingDown) return;
+      this.shuttingDown = true;
+      logger.info('Graceful shutdown started', { signal });
       try {
-        // Close HTTP server
-        if (this.server) {
-          await new Promise((resolve) => {
-            this.server.close(resolve);
-          });
-          logger.info('✅ HTTP server closed');
+        if (this.io) await new Promise(resolve => this.io.close(resolve));
+        if (this.server?.listening) {
+          await new Promise(resolve => this.server.close(resolve));
         }
-
-        // Close database connection
         await database.disconnect();
-        
-        logger.info('👋 Graceful shutdown completed');
         process.exit(0);
       } catch (error) {
-        logger.error('❌ Error during shutdown:', error);
+        logger.error('Graceful shutdown failed', { error: error.message });
         process.exit(1);
       }
     };
-
-    // Listen for termination signals
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.once('SIGTERM', () => shutdown('SIGTERM'));
+    process.once('SIGINT', () => shutdown('SIGINT'));
   }
 
-  /**
-   * Setup process error handlers
-   */
   setupProcessHandlers() {
-    // Handle uncaught exceptions
     uncaughtExceptionHandler();
-    
-    // Handle unhandled promise rejections
     unhandledRejectionHandler();
   }
 
-  /**
-   * Get Express app instance
-   */
   getApp() {
     return this.app;
   }
-
-  /**
-   * Get server instance
-   */
-  getServer() {
-    return this.server;
-  }
 }
 
-// Create and start the server
 const facebookLiteServer = new FacebookLiteServer();
-
-// Export for testing
 module.exports = facebookLiteServer.getApp();

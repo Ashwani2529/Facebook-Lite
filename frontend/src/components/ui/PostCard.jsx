@@ -16,13 +16,13 @@ import {
 
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
-import io from 'socket.io-client';
 
 import { UserContext } from '../../App';
 import Avatar from './Avatar';
 import Button from './Button';
 import Card from './Card';
 import SERVER_URL from '../../server_url';
+import { connectSocket } from '../../services/socket';
 
 const PostCard = ({
   post,
@@ -69,20 +69,27 @@ const PostCard = ({
 
   const isOwner = postedById === state?._id;
 
-  // Socket.IO setup for real-time comments
+  // One authenticated shared connection; each card only joins its own post room.
   useEffect(() => {
-    const socket = io(SERVER_URL || 'http://localhost:5000');
+    const socket = connectSocket();
+    const joinPost = () => socket.emit('join_post', { postId: id });
+    const handleComment = data => {
+      if (data.postId !== id) return;
+      setLocalComments(previous => (
+        previous.some(comment => comment._id === data.comment._id)
+          ? previous
+          : [...previous, data.comment]
+      ));
+    };
 
-    // Listen for new comments on this post
-    socket.on('new_comment', (data) => {
-      if (data.postId === id) {
-        console.log('📝 Received new comment for post:', id);
-        setLocalComments(prev => [...prev, data.comment]);
-      }
-    });
+    socket.on('connect', joinPost);
+    socket.on('new_comment', handleComment);
+    if (socket.connected) joinPost();
 
     return () => {
-      socket.disconnect();
+      socket.emit('leave_post', { postId: id });
+      socket.off('connect', joinPost);
+      socket.off('new_comment', handleComment);
     };
   }, [id]);
 
@@ -212,11 +219,12 @@ const PostCard = ({
         body: JSON.stringify({ postId: id })
       });
 
+      const result = await response.json().catch(() => ({}));
       if (response.ok) {
-        const result = await response.json();
         setLocalIsLiked(!localIsLiked);
         setLocalLikesCount(result.likes?.length || 0);
-        // updateFunc?.(result);
+      } else {
+        throw new Error(result.error || 'Failed to update like');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -245,11 +253,12 @@ const PostCard = ({
         })
       });
 
+      const result = await response.json().catch(() => ({}));
       if (response.ok) {
-        const result = await response.json();
         setCommentText('');
-        // Comment will be added via Socket.IO broadcast automatically
-        console.log('📝 Comment added successfully');
+        setLocalComments(result.comments || []);
+      } else {
+        throw new Error(result.error || 'Failed to add comment');
       }
     } catch (error) {
       console.error('Error adding comment:', error);

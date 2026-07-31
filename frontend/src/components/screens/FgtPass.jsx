@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
+import SERVER_URL from '../../server_url';
 
 const FgtPass = () => {
   const [email, setEmail] = useState('');
@@ -29,12 +30,21 @@ const FgtPass = () => {
 
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/v1/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to submit reset request');
       setSent(true);
-      toast.success('Reset link sent to your email!');
-    }, 2000);
+      toast.success(data.message || 'Reset request received');
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (sent) {

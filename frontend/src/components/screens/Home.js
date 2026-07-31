@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { HiOutlineRefresh, HiOutlineSparkles, HiOutlineUsers } from 'react-icons/hi';
+import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import Navbar from '../layout/Navbar';
 import PostCard from '../ui/PostCard';
+import { SkeletonPost } from '../ui/Loading';
 import SERVER_URL from '../../server_url';
 
 const Home = () => {
@@ -9,153 +13,120 @@ const Home = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState('');
 
-  const fetchPosts = async (page = 1, append = false) => {
+  const fetchPosts = useCallback(async (page = 1, append = false, signal) => {
+    append ? setLoadingMore(true) : setLoading(true);
+    setError('');
     try {
-      if (page === 1) setLoading(true);
-      else setLoadingMore(true);
-
-      const response = await fetch(`${SERVER_URL}/api/v1/posts/allpost?page=${page}&limit=30`, {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('jwt')
+      const response = await fetch(
+        `${SERVER_URL}/api/v1/posts/allpost?page=${page}&limit=30`,
+        {
+          signal,
+          headers: { Authorization: `Bearer ${localStorage.getItem('jwt')}` }
         }
-      });
-      const data = await response.json();
-      if (append) {
-        setPosts(prev => [...prev, ...(data.posts || [])]);
-      } else {
-        setPosts(data.posts || []);
-      }
-      
-      setHasMore(data.pagination?.hasMore || false);
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not load your feed');
+
+      setPosts(previous => append ? [...previous, ...(data.posts || [])] : (data.posts || []));
+      setHasMore(Boolean(data.pagination?.hasMore));
       setCurrentPage(page);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
+    } catch (requestError) {
+      if (requestError.name === 'AbortError') return;
+      setError(requestError.message);
       if (!append) setPosts([]);
+      toast.error(requestError.message);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
-
-  useEffect(() => {
-    fetchPosts(1, false);
   }, []);
 
-  const handleShowMore = () => {
-    fetchPosts(currentPage + 1, true);
-  };
-
-  const handleRefresh = () => {
-    fetchPosts(1, false);
-  };
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-gray-50 dark:bg-facebook-dark flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Loading posts...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPosts(1, false, controller.signal);
+    return () => controller.abort();
+  }, [fetchPosts]);
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 dark:bg-facebook-dark">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Home Feed
-              </h1>
-              <button
-                onClick={handleRefresh}
-                className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
-                title="Refresh posts"
-              >
-                <i className="fas fa-sync-alt"></i>
-              </button>
-            </div>
+      <main className="feed-page">
+        <section className="feed-hero" aria-labelledby="feed-title">
+          <div>
+            <span className="eyebrow"><HiOutlineSparkles /> Your community</span>
+            <h1 id="feed-title">Stories worth stopping for.</h1>
+            <p>Catch up with people you care about, share a thought, and keep the conversation moving.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchPosts(1)}
+            className="icon-action"
+            disabled={loading}
+            aria-label="Refresh feed"
+          >
+            <HiOutlineRefresh className={loading ? 'animate-spin' : ''} />
+          </button>
+        </section>
 
-            {/* Posts */}
-            {posts.length > 0 ? (
+        <div className="feed-layout">
+          <section className="feed-stream" aria-live="polite">
+            {loading ? (
+              <div className="space-y-6" aria-label="Loading posts">
+                {[0, 1, 2].map(item => <SkeletonPost key={item} className="surface-card p-6" />)}
+              </div>
+            ) : error ? (
+              <div className="empty-state" role="alert">
+                <div className="empty-state__icon"><HiOutlineRefresh /></div>
+                <h2>Your feed took a pause</h2>
+                <p>{error}</p>
+                <button type="button" className="btn-primary" onClick={() => fetchPosts(1)}>Try again</button>
+              </div>
+            ) : posts.length ? (
               <div className="space-y-6">
-                {posts.map(post => (
-                  <PostCard key={post._id} post={post}/>
-                ))}
-                
-                {/* Show More Button */}
-                {hasMore && (
-                  <div className="text-center py-8">
-                    <button
-                      onClick={handleShowMore}
-                      disabled={loadingMore}
-                      className="btn btn-primary px-6 py-3 rounded-full d-flex align-items-center mx-auto gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                    >
-                      {loadingMore ? (
-                        <>
-                          <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                          </div>
-                          Loading more posts...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-plus"></i>
-                          Show More Posts
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-                
-                {!hasMore && posts.length > 30 && (
-                  <div className="text-center py-8">
-                    <div className="bg-white dark:bg-facebook-card rounded-xl p-6 shadow-sm">
-                      <p className="text-gray-500 dark:text-gray-400 text-lg">
-                        🎉 You've reached the end!
-                      </p>
-                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-                        No more posts to show. Check back later for new content!
-                      </p>
-                    </div>
-                  </div>
+                {posts.map(post => <PostCard key={post._id} post={post} />)}
+                {hasMore ? (
+                  <button
+                    type="button"
+                    onClick={() => fetchPosts(currentPage + 1, true)}
+                    disabled={loadingMore}
+                    className="load-more"
+                  >
+                    {loadingMore ? <span className="spinner spinner--small" /> : <HiOutlineSparkles />}
+                    {loadingMore ? 'Bringing in more stories…' : 'Show more stories'}
+                  </button>
+                ) : (
+                  <div className="feed-finish">You’re all caught up. Nice work.</div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="bg-white dark:bg-facebook-card rounded-xl p-8 shadow-sm">
-                  <i className="fas fa-newspaper text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
-                    No posts available
-                  </p>
-                  <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
-                    Follow some users or create your first post to see content here!
-                  </p>
-                  <div className="flex gap-3 justify-center">
-                    <a href="/create" className="btn btn-primary px-4 py-2">
-                      Create Post
-                    </a>
-                    <button 
-                      onClick={handleRefresh}
-                      className="btn btn-outline-primary px-4 py-2"
-                    >
-                      Refresh
-                    </button>
-                  </div>
+              <div className="empty-state">
+                <div className="empty-state__icon"><HiOutlineUsers /></div>
+                <h2>Your feed is ready for a first story</h2>
+                <p>Find people to follow or start a conversation of your own.</p>
+                <div className="empty-state__actions">
+                  <Link to="/following" className="btn-secondary">Discover people</Link>
+                  <Link to="/create" className="btn-primary">Create a post</Link>
                 </div>
               </div>
             )}
-          </div>
+          </section>
+
+          <aside className="feed-aside" aria-label="Quick tips">
+            <div className="aside-card aside-card--accent">
+              <span className="eyebrow">Make it yours</span>
+              <h2>Small moments make a great feed.</h2>
+              <p>Follow people you know and react to the posts that brighten your day.</p>
+              <Link to="/following">Explore your network <span aria-hidden="true">→</span></Link>
+            </div>
+            <div className="aside-card">
+              <h3>Community tip</h3>
+              <p>Thoughtful comments help everyone feel seen. Keep it kind and genuine.</p>
+            </div>
+          </aside>
         </div>
-      </div>
+      </main>
     </>
   );
 };

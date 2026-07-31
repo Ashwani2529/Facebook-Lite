@@ -6,6 +6,12 @@ const chatSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   }],
+  participantKey: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message'
@@ -41,7 +47,8 @@ const messageSchema = new mongoose.Schema({
   content: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    maxlength: [4000, 'Message cannot exceed 4000 characters']
   },
   messageType: {
     type: String,
@@ -81,21 +88,38 @@ messageSchema.index({ receiver: 1, readStatus: 1 });
 
 // Static method to find or create chat between two users
 chatSchema.statics.findOrCreateChat = async function(user1Id, user2Id) {
+  const participants = [user1Id.toString(), user2Id.toString()].sort();
+  const participantKey = participants.join(':');
   let chat = await this.findOne({
-    participants: { $all: [user1Id, user2Id], $size: 2 }
-  }).populate('participants', 'name pic email')
-    .populate('lastMessage');
-
-  if (!chat) {
-    chat = new this({
-      participants: [user1Id, user2Id]
-    });
+    participants: { $all: participants, $size: 2 }
+  });
+  if (chat && !chat.participantKey) {
+    chat.participantKey = participantKey;
     await chat.save();
-    await chat.populate('participants', 'name pic email');
   }
-
+  if (!chat) chat = await this.findOneAndUpdate(
+    { participantKey },
+    {
+      $setOnInsert: {
+        participants,
+        participantKey,
+        lastActivity: new Date(),
+        isActive: true
+      }
+    },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+  await chat.populate('participants', 'name pic email');
+  await chat.populate('lastMessage');
   return chat;
 };
+
+chatSchema.pre('save', function(next) {
+  if (this.participants?.length === 2) {
+    this.participantKey = this.participants.map(String).sort().join(':');
+  }
+  next();
+});
 
 // Method to update last activity
 chatSchema.methods.updateLastActivity = function() {

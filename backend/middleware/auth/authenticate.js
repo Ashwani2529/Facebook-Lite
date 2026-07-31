@@ -183,6 +183,7 @@ const authorize = (...roles) => {
  * Check if user owns the resource
  */
 const checkOwnership = (resourceIdParam = 'id', userIdField = 'postedBy') => {
+  void resourceIdParam;
   return async (req, res, next) => {
     try {
       if (!req.user) {
@@ -192,9 +193,6 @@ const checkOwnership = (resourceIdParam = 'id', userIdField = 'postedBy') => {
           code: 'NO_USER'
         });
       }
-
-      const resourceId = req.params[resourceIdParam];
-      const userId = req.user._id.toString();
 
       // For posts, comments, etc., check ownership
       if (userIdField === 'postedBy') {

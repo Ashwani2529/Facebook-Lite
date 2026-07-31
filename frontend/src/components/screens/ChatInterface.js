@@ -4,11 +4,11 @@ import { UserContext } from '../../App';
 import { generateAvatarPlaceholder } from '../../utils/avatarUtils';
 import { HiArrowLeft, HiPaperAirplane, HiPhotograph, HiEmojiHappy, HiDotsVertical, HiX } from 'react-icons/hi';
 import SERVER_URL from '../../server_url';
-import io from 'socket.io-client';
 import toast from 'react-hot-toast';
 import imageCompression from "browser-image-compression";
 import EmojiPicker from 'emoji-picker-react';
 import './ChatInterface.css';
+import { connectSocket } from '../../services/socket';
 
 const ChatInterface = () => {
   const { chatId } = useParams();
@@ -20,7 +20,7 @@ const ChatInterface = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
-  const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
   const [typing, setTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   
@@ -37,68 +37,63 @@ const ChatInterface = () => {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (chatId && state) {
-      fetchChat();
-      fetchMessages();
-      initializeSocket();
-    }
+    if (!chatId || !state) return undefined;
+
+    fetchChat();
+    fetchMessages();
+
+    const activeSocket = connectSocket();
+    socketRef.current = activeSocket;
+
+    const joinChat = () => {
+      activeSocket.emit('join_chat', { chatId }, acknowledgement => {
+        if (acknowledgement && !acknowledgement.ok) {
+          toast.error(acknowledgement.error || 'Unable to join this chat');
+        }
+      });
+    };
+    const handleMessage = data => {
+      if (data.chatId !== chatId) return;
+      setMessages(previous => (
+        previous.some(message => message._id === data.message._id)
+          ? previous
+          : [...previous, data.message]
+      ));
+    };
+    const handleTyping = data => {
+      if (data.chatId === chatId && data.userId !== state._id) setOtherUserTyping(true);
+    };
+    const handleStoppedTyping = data => {
+      if (data.chatId === chatId && data.userId !== state._id) setOtherUserTyping(false);
+    };
+    const handleConnectError = error => {
+      toast.error(error.message || 'Live chat connection failed');
+    };
+
+    activeSocket.on('connect', joinChat);
+    activeSocket.on('new_message', handleMessage);
+    activeSocket.on('user_typing', handleTyping);
+    activeSocket.on('user_stopped_typing', handleStoppedTyping);
+    activeSocket.on('connect_error', handleConnectError);
+    if (activeSocket.connected) joinChat();
 
     return () => {
-      if (socket) {
-        socket.emit('leave_chat', chatId);
-        socket.disconnect();
-      }
-      if (typingTimerRef.current) {
-        clearTimeout(typingTimerRef.current);
-      }
+      activeSocket.emit('leave_chat', { chatId });
+      activeSocket.off('connect', joinChat);
+      activeSocket.off('new_message', handleMessage);
+      activeSocket.off('user_typing', handleTyping);
+      activeSocket.off('user_stopped_typing', handleStoppedTyping);
+      activeSocket.off('connect_error', handleConnectError);
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     };
+    // fetch helpers are intentionally scoped to the active chat.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId, state]);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Initialize Socket.IO connection
-  const initializeSocket = () => {
-    const newSocket = io(SERVER_URL || 'http://localhost:5000', {
-      withCredentials: true
-    });
-
-    newSocket.on('connect', () => {
-      newSocket.emit('join_chat', chatId);
-    });
-
-    // Listen for new messages
-    newSocket.on('new_message', (data) => {
-      if (data.chatId === chatId) {
-        setMessages(prev => {
-          // Check if message already exists to avoid duplicates
-          const exists = prev.some(msg => msg._id === data.message._id);
-          if (exists) return prev;
-          return [...prev, data.message];
-        });
-      }
-    });
-
-    // Listen for typing indicators
-    newSocket.on('user_typing', (data) => {
-      if (data.userId !== state._id) {
-        setOtherUserTyping(true);
-      }
-    });
-
-    newSocket.on('user_stopped_typing', (data) => {
-      if (data.userId !== state._id) {
-        setOtherUserTyping(false);
-      }
-    });
-
-    newSocket.on('disconnect', () => {
-    });
-
-    setSocket(newSocket);
-  };
 
   const fetchChat = async () => {
     try {
@@ -107,7 +102,8 @@ const ChatInterface = () => {
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         }
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to load chat');
       if (data.success) {
         const currentChat = data.chats.find(c => c._id === chatId);
         if (currentChat) {
@@ -133,12 +129,14 @@ const ChatInterface = () => {
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         }
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to load messages');
       if (data.success) {
         setMessages(data.messages);
       }
     } catch (error) {
       console.error('Fetch messages error:', error);
+      toast.error(error.message || 'Unable to load messages');
     } finally {
       if (showLoader) setLoading(false);
     }
@@ -153,9 +151,9 @@ const ChatInterface = () => {
     setNewMessage('');
 
     // Stop typing indicator
-    if (typing && socket) {
+    if (typing && socketRef.current) {
       setTyping(false);
-      socket.emit('stop_typing', {
+      socketRef.current.emit('stop_typing', {
         chatId: chatId,
         userId: state._id
       });
@@ -174,17 +172,17 @@ const ChatInterface = () => {
         })
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (data.success) {
         // Socket.IO will handle adding the message to UI automatically
         // No need to refresh messages manually
       } else {
-        alert('Failed to send message');
+        toast.error(data.error || 'Failed to send message');
         setNewMessage(messageContent);
       }
     } catch (error) {
       console.error('Send message error:', error);
-      alert('Failed to send message');
+      toast.error(error.message || 'Failed to send message');
       setNewMessage(messageContent);
     } finally {
       setSending(false);
@@ -193,11 +191,11 @@ const ChatInterface = () => {
 
   // Handle typing indicators
   const handleTyping = () => {
-    if (!socket || !otherUser) return;
+    if (!socketRef.current || !otherUser) return;
 
     if (!typing) {
       setTyping(true);
-      socket.emit('typing', {
+      socketRef.current.emit('typing', {
         chatId: chatId,
         userId: state._id,
         userName: state.name
@@ -212,8 +210,8 @@ const ChatInterface = () => {
     // Set new timer to stop typing after 1 second of inactivity
     typingTimerRef.current = setTimeout(() => {
       setTyping(false);
-      if (socket) {
-        socket.emit('stop_typing', {
+      if (socketRef.current) {
+        socketRef.current.emit('stop_typing', {
           chatId: chatId,
           userId: state._id
         });
@@ -513,7 +511,7 @@ const ChatInterface = () => {
                   style={{ maxWidth: '75%' }}
                 >
                   <div className="message-content">
-                    {(message.type === 'image' || (message.content && message.content.includes('cloudinary.com'))) ? (
+                    {(message.messageType === 'image' || (message.content && message.content.includes('cloudinary.com'))) ? (
                       <div className="message-image">
                         <img 
                           src={message.content} 

@@ -131,6 +131,7 @@ const sendErrorProd = (err, req, res) => {
  * Global error handling middleware
  */
 const globalErrorHandler = (err, req, res, next) => {
+  void next;
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 

@@ -5,6 +5,7 @@ import { UserContext } from '../../App';
 import { generateAvatarPlaceholder } from '../../utils/avatarUtils';
 import { HiChat, HiCheck, HiX, HiClock } from 'react-icons/hi';
 import SERVER_URL from '../../server_url';
+import toast from 'react-hot-toast';
 
 const MyChats = () => {
   const [activeTab, setActiveTab] = useState('chats'); // 'chats' or 'requests'
@@ -28,12 +29,14 @@ const MyChats = () => {
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         }
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to load chats');
       if (data.success) {
         setChats(data.chats);
       }
     } catch (error) {
       console.error('Fetch chats error:', error);
+      toast.error(error.message || 'Unable to load chats');
     }
   };
 
@@ -44,12 +47,14 @@ const MyChats = () => {
           'Authorization': 'Bearer ' + localStorage.getItem('jwt')
         }
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to load requests');
       if (data.success) {
         setChatRequests(data.requests);
       }
     } catch (error) {
       console.error('Fetch chat requests error:', error);
+      toast.error(error.message || 'Unable to load requests');
     } finally {
       setLoading(false);
     }
@@ -76,13 +81,13 @@ const MyChats = () => {
           fetchChats();
         }
         
-        alert(`Chat request ${action}ed successfully!`);
+        toast.success(`Chat request ${action}ed successfully`);
       } else {
-        alert(data.error || `Failed to ${action} chat request`);
+        toast.error(data.error || `Failed to ${action} chat request`);
       }
     } catch (error) {
       console.error(`Chat request ${action} error:`, error);
-      alert(`Failed to ${action} chat request`);
+      toast.error(`Failed to ${action} chat request`);
     }
   };
 

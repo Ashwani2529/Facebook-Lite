@@ -5,6 +5,11 @@ const ChatRequest = require('../models/chatRequest');
 const { Chat, Message } = require('../models/chat');
 const User = require('../models/user');
 const Notification = require('../models/notification');
+const mongoose = require('mongoose');
+
+const isParticipant = (chat, userId) => (
+  chat.participants.some(participant => participant.toString() === userId.toString())
+);
 
 // Send request (friend or chat)
 router.post('/request', authenticate, async (req, res) => {
@@ -12,6 +17,9 @@ router.post('/request', authenticate, async (req, res) => {
     const { receiverId, message, type = 'friend' } = req.body;
     const senderId = req.user._id;
 
+    if (!mongoose.isValidObjectId(receiverId)) {
+      return res.status(400).json({ error: 'A valid receiver ID is required' });
+    }
     if (!['friend', 'chat'].includes(type)) {
       return res.status(400).json({ error: "Invalid request type. Use 'friend' or 'chat'" });
     }
@@ -29,6 +37,22 @@ router.post('/request', authenticate, async (req, res) => {
     // Check for existing request
     const existingRequest = await ChatRequest.findExistingRequest(senderId, receiverId, type);
     if (existingRequest) {
+      if (existingRequest.status === 'declined') {
+        existingRequest.sender = senderId;
+        existingRequest.receiver = receiverId;
+        existingRequest.status = 'pending';
+        existingRequest.message = message || '';
+        existingRequest.respondedAt = undefined;
+        await existingRequest.save();
+        await existingRequest.populate('sender', 'name pic email');
+        await existingRequest.populate('receiver', 'name pic email');
+        return res.status(201).json({
+          success: true,
+          message: `${type.charAt(0).toUpperCase() + type.slice(1)} request sent successfully`,
+          status: 'sent',
+          request: existingRequest
+        });
+      }
       return res.status(400).json({ 
         error: `${type.charAt(0).toUpperCase() + type.slice(1)} request already exists`, 
         status: existingRequest.status 
@@ -129,10 +153,25 @@ router.put('/request/:requestId/respond', authenticate, async (req, res) => {
     chatRequest.respondedAt = new Date();
     await chatRequest.save();
 
-    // If accepted, create chat
+    // Apply the accepted relationship atomically from the user's perspective.
     let chat = null;
     if (action === 'accept') {
-      chat = await Chat.findOrCreateChat(chatRequest.sender, chatRequest.receiver);
+      if (chatRequest.type === 'friend') {
+        await Promise.all([
+          User.findByIdAndUpdate(chatRequest.sender, { $addToSet: { friends: chatRequest.receiver } }),
+          User.findByIdAndUpdate(chatRequest.receiver, { $addToSet: { friends: chatRequest.sender } })
+        ]);
+      } else {
+        chat = await Chat.findOrCreateChat(chatRequest.sender, chatRequest.receiver);
+      }
+
+      await Notification.createNotification({
+        recipient: chatRequest.sender,
+        sender: req.user._id,
+        type: chatRequest.type === 'friend' ? 'friend_accept' : 'chat_request',
+        message: `${req.user.name} accepted your ${chatRequest.type} request`,
+        relatedChatRequest: chatRequest._id
+      });
     }
 
     await chatRequest.populate('sender', 'name pic email');
@@ -169,22 +208,7 @@ router.post('/find-or-create', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Try to find existing chat
-    let chat = await Chat.findOne({
-      participants: { $all: [currentUserId, userId], $size: 2 }
-    }).populate('participants', '_id name email pic');
-
-    if (!chat) {
-      // Create new chat
-      chat = new Chat({
-        participants: [currentUserId, userId]
-      });
-      await chat.save();
-      
-      // Populate participants
-      chat = await Chat.findById(chat._id)
-        .populate('participants', '_id name email pic');
-    }
+    const chat = await Chat.findOrCreateChat(currentUserId, userId);
 
     res.status(200).json({
       success: true,
@@ -225,7 +249,8 @@ router.get('/chats', authenticate, async (req, res) => {
 router.get('/chat/:chatId/messages', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
-    const { page = 1, limit = 50 } = req.query;
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
 
     // Verify user is participant
     const chat = await Chat.findById(chatId);
@@ -233,7 +258,7 @@ router.get('/chat/:chatId/messages', authenticate, async (req, res) => {
       return res.status(404).json({ error: "Chat not found" });
     }
 
-    if (!chat.participants.includes(req.user._id)) {
+    if (!isParticipant(chat, req.user._id)) {
       return res.status(403).json({ error: "You are not a participant in this chat" });
     }
 
@@ -272,10 +297,15 @@ router.post('/chat/:chatId/message', authenticate, async (req, res) => {
   try {
     const { chatId } = req.params;
     const { content, messageType = 'text', replyTo } = req.body;
-    console.log(req.body);
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: "Message content is required" });
+    }
+    if (!['text', 'image', 'file'].includes(messageType)) {
+      return res.status(400).json({ error: 'Invalid message type' });
+    }
+    if (content.trim().length > 4000) {
+      return res.status(400).json({ error: 'Message cannot exceed 4000 characters' });
     }
 
     // Verify chat exists and user is participant
@@ -284,7 +314,7 @@ router.post('/chat/:chatId/message', authenticate, async (req, res) => {
       return res.status(404).json({ error: "Chat not found" });
     }
 
-    if (!chat.participants.includes(req.user._id)) {
+    if (!isParticipant(chat, req.user._id)) {
       return res.status(403).json({ error: "You are not a participant in this chat" });
     }
 
@@ -310,7 +340,7 @@ router.post('/chat/:chatId/message', authenticate, async (req, res) => {
     // Emit the message to all participants in the chat room via Socket.IO
     const io = req.app.get('io');
     if (io) {
-      io.to(chatId).emit('new_message', {
+      io.to(`chat:${chatId}`).emit('new_message', {
         message: message,
         chatId: chatId
       });
@@ -374,6 +404,18 @@ router.post('/send-request', authenticate, async (req, res) => {
     // Check if request already exists
     const existingRequest = await ChatRequest.findExistingRequest(senderId, userId, 'friend');
     if (existingRequest) {
+      if (existingRequest.status === 'declined') {
+        existingRequest.sender = senderId;
+        existingRequest.receiver = userId;
+        existingRequest.status = 'pending';
+        existingRequest.respondedAt = undefined;
+        await existingRequest.save();
+        return res.status(201).json({
+          success: true,
+          message: 'Friend request sent successfully',
+          status: 'sent'
+        });
+      }
       return res.status(400).json({ error: 'Friend request already exists' });
     }
 
