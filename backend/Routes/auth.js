@@ -16,7 +16,7 @@ const logger = require('../utils/logger');
 const User = require('../models/user');
 
 // JWT utility
-const jwt = require('jsonwebtoken');
+const jwt = require('../utils/jwt');
 
 /**
  * @desc    Get API info

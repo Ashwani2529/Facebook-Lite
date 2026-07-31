@@ -1,6 +1,5 @@
 const express = require('express');
 const http = require('http');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const path = require('path');
 const socketIo = require('socket.io');
@@ -8,6 +7,7 @@ const socketIo = require('socket.io');
 const config = require('./config/constants');
 const database = require('./config/database');
 const logger = require('./utils/logger');
+const jwt = require('./utils/jwt');
 const {
   applySecurity,
   apiRateLimit,

@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const jwt = require('../../utils/jwt');
 const mongoose = require('mongoose');
 const config = require('../../config/constants');
 const logger = require('../../utils/logger');

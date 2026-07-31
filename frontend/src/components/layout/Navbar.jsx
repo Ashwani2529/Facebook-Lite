@@ -492,7 +492,7 @@ const Navbar = () => {
                 type="text"
                 placeholder="Search users..."
                 value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 icon={<HiSearch className="w-5 h-5" />}
               />
               
